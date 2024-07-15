@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -78,7 +79,7 @@ function Viewfinder({ picture, onInputChange }: ViewfinderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div className="mx-auto h-[270px] w-[270px] overflow-hidden rounded-3xl bg-muted">
+    <div className="relative mx-auto h-[270px] w-[270px] overflow-hidden rounded-3xl bg-muted">
       <div
         className={cn("grid h-full place-content-center", picture && "hidden")}
       >
@@ -108,19 +109,25 @@ function Viewfinder({ picture, onInputChange }: ViewfinderProps) {
           </Tooltip>
         </TooltipProvider>
       </div>
-      <ViewfinderPicture picture={picture} />
+      <AnimatePresence>
+        {picture && (
+          <div className="absolute left-0 top-0 h-full w-full">
+            <ViewfinderPicture picture={picture} />
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
-function ViewfinderPicture({ picture }: { picture: string | null }) {
-  if (!picture) {
-    return null;
-  }
+function ViewfinderPicture({ picture }: { picture: string }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      className="pointer-events-none h-full w-full touch-none object-cover"
+    <motion.img
+      className="pointer-events-none touch-none object-cover"
+      initial={{ filter: "blur(20px)", scale: 1.5 }}
+      animate={{ filter: "blur(0px)", scale: 1 }}
+      exit={{ filter: "blur(20px)", scale: 1.5, opacity: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       src={picture}
       alt="A user uploaded picture."
       draggable={false}
