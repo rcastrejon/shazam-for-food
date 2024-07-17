@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
+import { AspectRatio } from "~/components/ui/aspect-ratio";
 import { Button } from "~/components/ui/button";
 import {
   Tooltip,
@@ -15,11 +16,18 @@ import { streamFirstAnalysisComponent } from "./_ai/actions";
 
 export default function Home() {
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto w-full max-w-screen-lg">
+    <div className="flex min-h-screen flex-col">
+      <header className="sticky top-0 z-[99] bg-background/85 backdrop-blur-xl">
+        <div className="mx-4 flex h-[56px] items-center justify-center">
+          <span className="text-lg font-semibold leading-none tracking-tight">
+            Shazam for Food
+          </span>
+        </div>
+      </header>
+      <main className="flex-grow">
         <GenerativeArea>
           {({ state, captureInputRef, diskInputRef, onRetakePicture }) => (
-            <div className="px-6 py-8">
+            <div className="mx-8 mt-4 flex flex-col items-center">
               <Viewfinder inputRef={captureInputRef} picture={state.picture} />
               <Controls
                 inputRef={diskInputRef}
@@ -29,7 +37,7 @@ export default function Home() {
             </div>
           )}
         </GenerativeArea>
-      </div>
+      </main>
     </div>
   );
 }
@@ -103,48 +111,52 @@ type ViewfinderProps = {
 
 function Viewfinder({ inputRef, picture }: ViewfinderProps) {
   return (
-    <div className="relative mx-auto h-[270px] w-[270px] overflow-hidden rounded-3xl bg-muted">
-      <div
-        className={cn(
-          "absolute inset-0 grid place-content-center",
-          picture && "hidden",
-        )}
-      >
-        <TooltipProvider delayDuration={350}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                className="mx-auto"
-                onClick={() => inputRef.current?.click()}
-              >
-                Start camera
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <span className="text-xs">
-                Camera only available on mobile devices
-              </span>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
-      <AnimatePresence>
-        {picture && (
-          <div className="absolute inset-0">
-            <motion.img
-              className="pointer-events-none h-full w-full touch-none object-cover"
-              initial={{ filter: "blur(20px)", scale: 1.5 }}
-              animate={{ filter: "blur(0px)", scale: 1 }}
-              exit={{ filter: "blur(20px)", scale: 1.5, opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              src={picture}
-              alt="A user uploaded picture."
-              draggable={false}
-            />
+    <div className="w-full sm:max-w-[256px]">
+      <AspectRatio ratio={1}>
+        <div className="absolute inset-0 overflow-hidden rounded-3xl bg-muted">
+          <div
+            className={cn(
+              "absolute inset-0 grid place-content-center",
+              picture && "hidden",
+            )}
+          >
+            <TooltipProvider delayDuration={350}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    className="mx-auto"
+                    onClick={() => inputRef.current?.click()}
+                  >
+                    Start camera
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <span className="text-xs">
+                    Camera only available on mobile devices
+                  </span>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-        )}
-      </AnimatePresence>
+
+          <AnimatePresence>
+            {picture && (
+              <div className="absolute inset-0">
+                <motion.img
+                  className="pointer-events-none h-full w-full touch-none object-cover"
+                  initial={{ filter: "blur(20px)", scale: 1.5 }}
+                  animate={{ filter: "blur(0px)", scale: 1 }}
+                  exit={{ filter: "blur(20px)", scale: 1.5, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  src={picture}
+                  alt="A user uploaded picture."
+                  draggable={false}
+                />
+              </div>
+            )}
+          </AnimatePresence>
+        </div>
+      </AspectRatio>
     </div>
   );
 }
@@ -171,8 +183,10 @@ function Controls({ inputRef, picture, onRetakePicture }: ControlsProps) {
 
   if (picture === null) {
     return (
-      <div className="flex flex-col items-center gap-2 pt-2">
-        <span className="text-xs text-muted-foreground">or</span>
+      <div className="mt-2 max-w-fit space-y-2">
+        <div className="flex justify-center">
+          <span className="text-xs leading-none text-muted-foreground">or</span>
+        </div>
         <Button
           onClick={() => inputRef.current?.click()}
           size="sm"
@@ -185,7 +199,7 @@ function Controls({ inputRef, picture, onRetakePicture }: ControlsProps) {
   }
 
   return (
-    <div className="mx-auto grid max-w-fit gap-2 pt-4">
+    <div className="mt-4 grid max-w-fit space-y-2">
       <Button className="px-8" size="sm" onClick={handleStartAnalysis}>
         Continue
       </Button>
