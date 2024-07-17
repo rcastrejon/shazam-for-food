@@ -10,51 +10,45 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
+import { cn } from "~/lib/utils";
 import { streamFirstAnalysisComponent } from "./_ai/actions";
-import {
-  GenerativeAreaProvider,
-  useGenerativeArea,
-} from "./_components/generative-area-provider";
 
 export default function Home() {
   return (
     <div className="min-h-screen">
       <div className="mx-auto w-full max-w-screen-lg">
-        <GenerativeAreaProvider>
-          <GenerativeArea>
-            {(picture, onImageInputChange, onRetakePicture) => (
-              <div className="px-6 py-8">
-                <Viewfinder
-                  picture={picture}
-                  onImageInputChange={onImageInputChange}
-                />
-                <Controls
-                  picture={picture}
-                  onImageInputChange={onImageInputChange}
-                  onRetakePicture={onRetakePicture}
-                />
-              </div>
-            )}
-          </GenerativeArea>
-        </GenerativeAreaProvider>
+        <GenerativeArea>
+          {({ state, captureInputRef, diskInputRef, onRetakePicture }) => (
+            <div className="px-6 py-8">
+              <Viewfinder inputRef={captureInputRef} picture={state.picture} />
+              <Controls
+                inputRef={diskInputRef}
+                picture={state.picture}
+                onRetakePicture={onRetakePicture}
+              />
+            </div>
+          )}
+        </GenerativeArea>
       </div>
     </div>
   );
 }
 
 type GenerativeAreaProps = {
-  children: (
-    picture: string | null,
-    onImageInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
-    onRetakePicture: () => void,
-  ) => React.ReactNode;
+  children: (props: {
+    state: { picture: string | null };
+    captureInputRef: React.RefObject<HTMLInputElement>;
+    diskInputRef: React.RefObject<HTMLInputElement>;
+    onRetakePicture: () => void;
+  }) => React.ReactNode;
 };
 
 function GenerativeArea({ children }: GenerativeAreaProps) {
-  const { state, dispatch } = useGenerativeArea(); // TODO: Context may not be necessary
-  const { picture } = state;
+  const captureInputRef = useRef<HTMLInputElement>(null);
+  const diskInputRef = useRef<HTMLInputElement>(null);
+  const [picture, setPicture] = useState<string | null>(null);
 
-  function onImageInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file?.type.startsWith("image/")) {
       throw new Error("Invalid file type");
@@ -62,62 +56,78 @@ function GenerativeArea({ children }: GenerativeAreaProps) {
 
     const reader = new FileReader();
     reader.onload = () => {
-      dispatch({
-        type: "SET_PICTURE",
-        payload: reader.result as string,
-      });
+      setPicture(() => reader.result as string);
     };
     reader.readAsDataURL(file);
   }
 
   function onRetakePicture() {
-    dispatch({
-      type: "UNSET_PICTURE",
-    });
+    setPicture(() => null);
+    if (captureInputRef.current && diskInputRef.current) {
+      captureInputRef.current.value = "";
+      diskInputRef.current.value = "";
+    }
   }
 
-  return children(picture, onImageInputChange, onRetakePicture);
+  return (
+    <>
+      <input
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleInputChange}
+        ref={captureInputRef}
+        hidden
+      />
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleInputChange}
+        ref={diskInputRef}
+        hidden
+      />
+      {children({
+        state: { picture },
+        captureInputRef,
+        diskInputRef,
+        onRetakePicture,
+      })}
+    </>
+  );
 }
 
 type ViewfinderProps = {
+  inputRef: React.RefObject<HTMLInputElement>;
   picture: string | null;
-  onImageInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
-function Viewfinder({ picture, onImageInputChange }: ViewfinderProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-
+function Viewfinder({ inputRef, picture }: ViewfinderProps) {
   return (
     <div className="relative mx-auto h-[270px] w-[270px] overflow-hidden rounded-3xl bg-muted">
-      {!picture && (
-        <div className="absolute inset-0 grid place-content-center">
-          <input
-            className="hidden"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={onImageInputChange}
-            ref={inputRef}
-          />
-          <TooltipProvider delayDuration={500}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  className="mx-auto"
-                  onClick={() => inputRef.current?.click()}
-                >
-                  Start camera
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span className="text-xs">
-                  Camera only available on mobile devices
-                </span>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      )}
+      <div
+        className={cn(
+          "absolute inset-0 grid place-content-center",
+          picture && "hidden",
+        )}
+      >
+        <TooltipProvider delayDuration={350}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                className="mx-auto"
+                onClick={() => inputRef.current?.click()}
+              >
+                Start camera
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <span className="text-xs">
+                Camera only available on mobile devices
+              </span>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
 
       <AnimatePresence>
         {picture && (
@@ -140,17 +150,12 @@ function Viewfinder({ picture, onImageInputChange }: ViewfinderProps) {
 }
 
 type ControlsProps = {
+  inputRef: React.RefObject<HTMLInputElement>;
   picture: string | null;
-  onImageInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRetakePicture: () => void;
 };
 
-function Controls({
-  picture,
-  onImageInputChange,
-  onRetakePicture,
-}: ControlsProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+function Controls({ inputRef, picture, onRetakePicture }: ControlsProps) {
   const [genUI, setGenUI] = useState<React.ReactNode | null>(null);
 
   async function handleStartAnalysis() {
@@ -168,13 +173,6 @@ function Controls({
     return (
       <div className="flex flex-col items-center gap-2 pt-2">
         <span className="text-xs text-muted-foreground">or</span>
-        <input
-          className="hidden"
-          type="file"
-          accept="image/*"
-          onChange={onImageInputChange}
-          ref={inputRef}
-        />
         <Button
           onClick={() => inputRef.current?.click()}
           size="sm"
@@ -188,10 +186,15 @@ function Controls({
 
   return (
     <div className="mx-auto grid max-w-fit gap-2 pt-4">
-      <Button size="sm" onClick={handleStartAnalysis}>
+      <Button className="px-8" size="sm" onClick={handleStartAnalysis}>
         Continue
       </Button>
-      <Button size="sm" variant="outline" onClick={onRetakePicture}>
+      <Button
+        className="px-8"
+        size="sm"
+        variant="outline"
+        onClick={onRetakePicture}
+      >
         Retake picture
       </Button>
     </div>
