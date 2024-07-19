@@ -1,26 +1,14 @@
-"use server";
+import "server-only";
 
 import { streamObject } from "ai";
-import { createStreamableUI } from "ai/rsc";
-import { Loader } from "lucide-react";
+import { createAI, createStreamableUI } from "ai/rsc";
 import { ollama } from "ollama-ai-provider";
 import { z } from "zod";
 
-function Thinking({ thoughts }: { thoughts: string | undefined }) {
-  if (thoughts) {
-    return <div className="text-muted-foreground">{thoughts}</div>;
-  }
-  return <Loader className="h-4 w-4 animate-spin text-muted-foreground" />;
-}
-
-export async function streamFirstAnalysisComponent({
-  image,
-}: {
-  image: string;
-}) {
+export async function streamFirstAnalysisComponents(image: string) {
   "use server";
 
-  const stream = createStreamableUI(<Thinking thoughts={undefined} />);
+  const thoughtsUI = createStreamableUI(<span>llm loading</span>);
 
   void (async () => {
     const { partialObjectStream } = await streamObject({
@@ -60,21 +48,24 @@ analyze every part of the image.`,
     });
 
     for await (const partialObject of partialObjectStream) {
-      if (!partialObject.checkboxes) {
-        stream.update(<Thinking thoughts={partialObject.thinking} />);
+      if (partialObject.thinking) {
+        thoughtsUI.update(<span>{partialObject.thinking}</span>);
         continue;
       }
-      stream.update(
-        <div>
-          {partialObject.checkboxes.map((word, i) => (
-            <div key={i}>{word}</div>
-          ))}
-        </div>,
-      );
     }
 
-    stream.done();
+    thoughtsUI.done();
   })();
 
-  return stream.value;
+  return {
+    thoughtsUI: thoughtsUI.value,
+  };
 }
+
+export const AI = createAI({
+  actions: {
+    streamFirstAnalysisComponents,
+  },
+});
+
+export type ServerAI = typeof AI;

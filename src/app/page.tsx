@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { AspectRatio } from "~/components/ui/aspect-ratio";
@@ -12,7 +11,7 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
-import { streamFirstAnalysisComponent } from "./_ai/actions";
+import { GenerativeArea } from "./_components/generative-area";
 
 export default function Home() {
   return (
@@ -24,92 +23,39 @@ export default function Home() {
           </span>
         </div>
       </header>
-      <main className="flex-grow">
+      <div className="flex-grow">
         <GenerativeArea>
-          {({ state, captureInputRef, diskInputRef, onRetakePicture }) => (
-            <div className="mx-8 mt-4 flex flex-col items-center">
-              <Viewfinder inputRef={captureInputRef} picture={state.picture} />
-              <Controls
-                inputRef={diskInputRef}
-                picture={state.picture}
-                onRetakePicture={onRetakePicture}
-              />
-            </div>
+          {({ state, startPictureUpload, startAnalysis, retakePicture }) => (
+            <main className="mx-auto w-full max-w-screen-md">
+              <div className="mx-8 mt-4 flex flex-col items-center">
+                <Viewfinder
+                  picture={state.picture}
+                  handleStartCamera={() => startPictureUpload("capture")}
+                />
+                {["idle", "picture-confirmation"].includes(state.status) && (
+                  <Controls
+                    isPictureLoaded={!!state.picture}
+                    handleOpenFilePicker={() => startPictureUpload("default")}
+                    handleStartAnalysis={startAnalysis}
+                    handleRetakePicture={retakePicture}
+                  />
+                )}
+              </div>
+              {state.thoughtsUI}
+            </main>
           )}
         </GenerativeArea>
-      </main>
+      </div>
     </div>
   );
 }
 
-type GenerativeAreaProps = {
-  children: (props: {
-    state: { picture: string | null };
-    captureInputRef: React.RefObject<HTMLInputElement>;
-    diskInputRef: React.RefObject<HTMLInputElement>;
-    onRetakePicture: () => void;
-  }) => React.ReactNode;
-};
-
-function GenerativeArea({ children }: GenerativeAreaProps) {
-  const captureInputRef = useRef<HTMLInputElement>(null);
-  const diskInputRef = useRef<HTMLInputElement>(null);
-  const [picture, setPicture] = useState<string | null>(null);
-
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file?.type.startsWith("image/")) {
-      throw new Error("Invalid file type");
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPicture(() => reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function onRetakePicture() {
-    setPicture(() => null);
-    if (captureInputRef.current && diskInputRef.current) {
-      captureInputRef.current.value = "";
-      diskInputRef.current.value = "";
-    }
-  }
-
-  return (
-    <>
-      <input
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handleInputChange}
-        ref={captureInputRef}
-        hidden
-      />
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleInputChange}
-        ref={diskInputRef}
-        hidden
-      />
-      {children({
-        state: { picture },
-        captureInputRef,
-        diskInputRef,
-        onRetakePicture,
-      })}
-    </>
-  );
-}
-
 type ViewfinderProps = {
-  inputRef: React.RefObject<HTMLInputElement>;
   picture: string | null;
+  handleStartCamera: () => void;
 };
 
-function Viewfinder({ inputRef, picture }: ViewfinderProps) {
+function Viewfinder({ picture, handleStartCamera }: ViewfinderProps) {
   return (
     <div className="w-full sm:max-w-[256px]">
       <AspectRatio ratio={1}>
@@ -123,10 +69,7 @@ function Viewfinder({ inputRef, picture }: ViewfinderProps) {
             <TooltipProvider delayDuration={350}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    className="mx-auto"
-                    onClick={() => inputRef.current?.click()}
-                  >
+                  <Button className="mx-auto" onClick={handleStartCamera}>
                     Start camera
                   </Button>
                 </TooltipTrigger>
@@ -162,36 +105,25 @@ function Viewfinder({ inputRef, picture }: ViewfinderProps) {
 }
 
 type ControlsProps = {
-  inputRef: React.RefObject<HTMLInputElement>;
-  picture: string | null;
-  onRetakePicture: () => void;
+  isPictureLoaded: boolean;
+  handleOpenFilePicker: () => void;
+  handleStartAnalysis: () => void;
+  handleRetakePicture: () => void;
 };
 
-function Controls({ inputRef, picture, onRetakePicture }: ControlsProps) {
-  const [genUI, setGenUI] = useState<React.ReactNode | null>(null);
-
-  async function handleStartAnalysis() {
-    if (!picture) {
-      throw new Error("No picture to analyze");
-    }
-    setGenUI(await streamFirstAnalysisComponent({ image: picture }));
-  }
-
-  if (genUI) {
-    return genUI;
-  }
-
-  if (picture === null) {
+function Controls({
+  isPictureLoaded,
+  handleOpenFilePicker,
+  handleStartAnalysis,
+  handleRetakePicture,
+}: ControlsProps) {
+  if (!isPictureLoaded) {
     return (
       <div className="mt-2 max-w-fit space-y-2">
         <div className="flex justify-center">
           <span className="text-xs leading-none text-muted-foreground">or</span>
         </div>
-        <Button
-          onClick={() => inputRef.current?.click()}
-          size="sm"
-          variant="secondary"
-        >
+        <Button onClick={handleOpenFilePicker} size="sm" variant="secondary">
           Upload from camera roll
         </Button>
       </div>
@@ -207,7 +139,7 @@ function Controls({ inputRef, picture, onRetakePicture }: ControlsProps) {
         className="px-8"
         size="sm"
         variant="outline"
-        onClick={onRetakePicture}
+        onClick={handleRetakePicture}
       >
         Retake picture
       </Button>
