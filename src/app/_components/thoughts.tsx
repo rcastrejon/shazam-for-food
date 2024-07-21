@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Bot } from "lucide-react";
 
 import { Skeleton } from "~/components/ui/skeleton";
 
@@ -18,7 +19,7 @@ function AnimatedTitle() {
   return <span>Thinking{dots}</span>;
 }
 
-function PlacehoderContent() {
+function PlaceholderContent() {
   return (
     <div className="space-y-1.5">
       <Skeleton className="h-[0.75rem] w-full" />
@@ -39,10 +40,11 @@ export function ThoughtsContainer({
 
   return (
     <div className="space-y-1.5 rounded-lg border p-3 text-sm">
-      <div className="font-semibold leading-none tracking-tight">
+      <div className="flex items-center font-semibold leading-none tracking-tight">
+        <Bot className="mr-2 h-4 w-4" />
         {isGenerating ? <AnimatedTitle /> : <span>Thoughts</span>}
       </div>
-      {isPlaceholder ? <PlacehoderContent /> : children}
+      {isPlaceholder ? <PlaceholderContent /> : children}
     </div>
   );
 }
