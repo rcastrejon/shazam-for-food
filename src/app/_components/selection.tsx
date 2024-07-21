@@ -10,22 +10,32 @@ export function SelectionContainer({
   enabled: boolean;
 }>) {
   return (
-    <div>
-      <div className="flex items-center text-muted-foreground">
-        <Info className="mr-4 h-5 w-5 fill-muted" />
-        <div className="space-y-1">
-          <h5 className="text-sm leading-none tracking-tight text-muted-foreground">
-            Additional information required!
-          </h5>
-          <p className="text-xs text-muted-foreground">
-            Please select <span className="underline">all</span> the options
-            that apply to your dish:
-          </p>
+    <div className="flex flex-col">
+      <div className="grid grid-cols-[auto,_1fr] text-muted-foreground">
+        <div className="row-span-2 flex items-center">
+          <Info className="mr-4 h-4 w-4" />
         </div>
+        <h5 className="text-sm leading-none tracking-tight text-muted-foreground">
+          Additional information required!
+        </h5>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Please select <span className="underline">all</span> the options that
+          apply to your meal:
+        </p>
       </div>
-      <form className="mt-2 grid space-y-2">
-        {children}
-        <Button disabled={!enabled}>Submit</Button>
+      <form className="mt-2 grid">
+        <div className="space-y-2">{children}</div>
+        <Button className="mt-2 sm:hidden" type="submit" disabled={!enabled}>
+          Submit
+        </Button>
+        <Button
+          className="mt-4 hidden w-fit px-8 sm:block"
+          type="submit"
+          size="sm"
+          disabled={!enabled}
+        >
+          Submit
+        </Button>
       </form>
     </div>
   );
@@ -33,7 +43,7 @@ export function SelectionContainer({
 
 export function SelectionItem({ label }: { label: string }) {
   return (
-    <div className="flex flex-row items-center space-x-4 rounded-lg px-4 py-3 transition-all has-[:checked]:bg-accent sm:has-[:checked]:bg-transparent">
+    <div className="flex items-center space-x-4 rounded-lg px-4 py-3 transition-colors has-[:checked]:bg-accent sm:px-0 sm:py-0 sm:has-[:checked]:bg-transparent">
       <Checkbox id={label} name={label} />
       <label className="cursor-pointer text-sm" htmlFor={label}>
         {label}

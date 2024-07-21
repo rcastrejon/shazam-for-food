@@ -2,7 +2,7 @@
 const nextConfig = {
   experimental: {
     serverActions: {
-      bodySizeLimit: "10mb", // TODO: Optimize image uploading and remove this
+      bodySizeLimit: "20mb", // TODO: Optimize image uploading and remove this
     },
   },
 };

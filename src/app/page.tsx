@@ -14,7 +14,7 @@ import {
 } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 import { SelectionContainer, SelectionItem } from "./_components/selection";
-import { Thoughts } from "./_components/thoughts";
+import { ThoughtsContainer, ThoughtsContent } from "./_components/thoughts";
 import { useGenerativeArea } from "./_hooks/use-generative-area";
 
 export const maxDuration = 120;
@@ -22,9 +22,9 @@ export const maxDuration = 120;
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-[99] bg-background/85 backdrop-blur-xl">
-        <div className="mx-4 flex h-[56px] items-center justify-center">
-          <span className="text-lg font-semibold leading-none tracking-tight">
+      <header className="sticky left-0 right-0 top-0 z-[99] bg-background/85 backdrop-blur-xl">
+        <div className="mx-4 grid h-[56px] place-content-center">
+          <span className="text-center text-lg font-semibold leading-none tracking-tight">
             Shazam for Food
           </span>
         </div>
@@ -101,24 +101,24 @@ export function MainContent() {
           retakePicture={handleRetakePicture}
         />
       </div>
-      {["thinking", "thinking-selection", "selection"].includes(
-        state.status,
-      ) && (
+      <GenerativeContainer status={state.status}>
         <div className="mx-8 mt-4">
-          <Thoughts isGenerating={state.status === "thinking"}>
-            {state.generation?.thinking}
-          </Thoughts>
+          <ThoughtsContainer isGenerating={state.status === "thinking"}>
+            {state.generation?.thinking && (
+              <ThoughtsContent>{state.generation.thinking}</ThoughtsContent>
+            )}
+          </ThoughtsContainer>
         </div>
-      )}
-      {["thinking-selection", "selection"].includes(state.status) && (
-        <div className="mx-8 mt-4">
-          <SelectionContainer enabled={state.status === "selection"}>
-            {state.generation?.checkboxes?.map((cb, i) => (
-              <SelectionItem label={cb.label} key={i} />
-            ))}
-          </SelectionContainer>
-        </div>
-      )}
+        {state.generation?.checkboxes && (
+          <div className="mx-8 mt-4">
+            <SelectionContainer enabled={state.status === "selection"}>
+              {state.generation.checkboxes.map((cb, i) => (
+                <SelectionItem label={cb.label} key={i} />
+              ))}
+            </SelectionContainer>
+          </div>
+        )}
+      </GenerativeContainer>
     </main>
   );
 }
@@ -133,13 +133,8 @@ function Viewfinder({
   return (
     <div className="w-full sm:w-[256px]">
       <AspectRatio ratio={1}>
-        <div className="absolute inset-0 overflow-hidden rounded-3xl bg-muted">
-          <div
-            className={cn(
-              "absolute inset-0 grid place-content-center",
-              picture && "hidden",
-            )}
-          >
+        <div className="absolute inset-0 grid overflow-hidden rounded-3xl bg-muted">
+          <div className={cn("m-auto", picture && "hidden")}>
             <TooltipProvider delayDuration={350}>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -148,28 +143,29 @@ function Viewfinder({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <span className="text-xs">
+                  <p className="text-xs">
                     Camera only available on mobile devices
-                  </span>
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            <p className="mt-1.5 text-center text-xs text-muted-foreground">
+              Image up to 20MB
+            </p>
           </div>
 
           <AnimatePresence>
             {picture && (
-              <div className="absolute inset-0">
-                <motion.img
-                  className="pointer-events-none h-full w-full touch-none object-cover"
-                  initial={{ filter: "blur(20px)", scale: 1.5 }}
-                  animate={{ filter: "blur(0px)", scale: 1 }}
-                  exit={{ filter: "blur(20px)", scale: 1.5, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                  src={picture}
-                  alt="A user uploaded picture."
-                  draggable={false}
-                />
-              </div>
+              <motion.img
+                className="pointer-events-none absolute h-full w-full touch-none object-cover"
+                initial={{ filter: "blur(20px)", scale: 1.5 }}
+                animate={{ filter: "blur(0px)", scale: 1 }}
+                exit={{ filter: "blur(20px)", scale: 1.5, opacity: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                src={picture}
+                alt="A user uploaded picture."
+                draggable={false}
+              />
             )}
           </AnimatePresence>
         </div>
@@ -193,9 +189,9 @@ function Controls({
 }: ControlsProps) {
   if (status === "idle") {
     return (
-      <div className="mt-2 max-w-fit space-y-2">
-        <div className="flex justify-center">
-          <span className="text-xs leading-none text-muted-foreground">or</span>
+      <div className="mt-2 w-fit space-y-2">
+        <div className="text-center text-xs leading-none text-muted-foreground">
+          or
         </div>
         <Button onClick={openCameraRoll} size="sm" variant="secondary">
           Upload from camera roll
@@ -206,16 +202,9 @@ function Controls({
 
   if (status === "picture-confirmation") {
     return (
-      <div className="mt-4 grid max-w-fit space-y-2">
-        <Button className="px-8" size="sm" onClick={startAnalysis}>
-          Continue
-        </Button>
-        <Button
-          className="px-8"
-          size="sm"
-          variant="outline"
-          onClick={retakePicture}
-        >
+      <div className="mt-4 grid w-fit space-y-2">
+        <Button onClick={startAnalysis}>Continue</Button>
+        <Button variant="outline" onClick={retakePicture}>
           Retake picture
         </Button>
       </div>
@@ -223,4 +212,21 @@ function Controls({
   }
 
   return null;
+}
+
+function GenerativeContainer({
+  status,
+  children,
+}: React.PropsWithChildren<{ status: Status }>) {
+  const isGenerativeContentVisible = [
+    "thinking",
+    "thinking-selection",
+    "selection",
+  ].includes(status);
+
+  if (!isGenerativeContentVisible) {
+    return null;
+  }
+
+  return <>{children}</>;
 }

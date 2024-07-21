@@ -1,6 +1,7 @@
 "use server";
 
-import { google } from "@ai-sdk/google";
+// import { google } from "@ai-sdk/google";
+import { openai } from "@ai-sdk/openai";
 import { streamObject } from "ai";
 import { createStreamableValue } from "ai/rsc";
 
@@ -12,7 +13,8 @@ export async function streamAnalysis(image: string) {
 
   void (async () => {
     const { partialObjectStream } = await streamObject({
-      model: google("models/gemini-1.5-pro-latest"), // TODO: Change to the final model
+      // model: google("models/gemini-1.5-pro-latest"), // TODO: Change to the final model
+      model: openai("gpt-4o"),
       temperature: 0.7,
       system: `You have perfect vision and pay great attention to detail which \
 makes you an expert at identifying ingredients in food. You are tasked with \
