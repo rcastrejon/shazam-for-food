@@ -36,7 +36,7 @@ export default function Home() {
   );
 }
 
-export function MainContent() {
+function MainContent() {
   const captureInputRef = useRef<HTMLInputElement>(null);
   const diskInputRef = useRef<HTMLInputElement>(null);
 
