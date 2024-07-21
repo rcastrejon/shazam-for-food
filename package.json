@@ -11,19 +11,20 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/google": "^0.0.27",
+    "@ai-sdk/openai": "^0.0.37",
     "@radix-ui/react-aspect-ratio": "^1.1.0",
+    "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.2",
-    "ai": "^3.2.22",
+    "ai": "^3.2.32",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "framer-motion": "^11.3.2",
     "lucide-react": "^0.408.0",
     "next": "14.2.5",
-    "ollama-ai-provider": "^0.10.0",
     "react": "^18",
     "react-dom": "^18",
-    "server-only": "^0.0.1",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.23.8"
