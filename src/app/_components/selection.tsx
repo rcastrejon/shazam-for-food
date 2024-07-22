@@ -1,4 +1,5 @@
 import { Info } from "lucide-react";
+import { z } from "zod";
 
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -6,9 +7,19 @@ import { Checkbox } from "~/components/ui/checkbox";
 export function SelectionContainer({
   children,
   enabled,
+  onSubmit,
 }: React.PropsWithChildren<{
   enabled: boolean;
+  onSubmit: (options: string[]) => Promise<void>;
 }>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const schema = z.record(z.string(), z.literal("on"));
+    const formData = new FormData(e.currentTarget);
+    const values = schema.parse(Object.fromEntries(formData.entries()));
+    await onSubmit(Object.keys(values));
+  }
+
   return (
     <div className="flex flex-col">
       <div className="grid grid-cols-[auto,_1fr] text-muted-foreground">
@@ -23,7 +34,7 @@ export function SelectionContainer({
           apply to your meal:
         </p>
       </div>
-      <form className="mt-2 grid">
+      <form className="mt-2 grid" onSubmit={handleSubmit}>
         <div className="space-y-2">{children}</div>
         <Button className="mt-2 sm:hidden" type="submit" disabled={!enabled}>
           Submit

@@ -1,17 +1,20 @@
 import { useState } from "react";
-import { readStreamableValue } from "ai/rsc";
+import { readStreamableValue, useActions } from "ai/rsc";
 
+import type { AIType } from "../_ai/actions";
 import type { PartialAnalysisSchema } from "../_ai/schemas";
-import { streamAnalysis } from "../_ai/actions";
 
 export type Status =
   | "idle"
   | "picture-confirmation"
   | "thinking"
   | "thinking-selection"
-  | "selection";
+  | "selection"
+  | "answer";
 
 export function useGenerativeArea() {
+  const { streamAnalysis, streamAnswer } = useActions<AIType>();
+
   const [status, setStatus] = useState<Status>("idle");
   const [picture, setPicture] = useState<string>();
   const [generation, setGeneration] = useState<PartialAnalysisSchema>();
@@ -43,8 +46,13 @@ export function useGenerativeArea() {
         setStatus(() => "thinking-selection");
       }
     }
-
     setStatus(() => "selection");
+  }
+
+  async function onSelectOptions(options: string[]) {
+    setStatus(() => "answer");
+    const result = await streamAnswer(options);
+    console.debug(result);
   }
 
   return {
@@ -56,5 +64,6 @@ export function useGenerativeArea() {
     onUploadPicture,
     onRetakePicture,
     onStartAnalysis,
+    onSelectOptions,
   };
 }

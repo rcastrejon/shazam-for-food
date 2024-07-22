@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
 import { cn } from "~/lib/utils";
+import { AI } from "./_ai/actions";
 
 import "./globals.css";
 
@@ -26,7 +27,7 @@ export default function RootLayout({
       <body
         className={cn("bg-background font-sans antialiased", inter.variable)}
       >
-        {children}
+        <AI>{children}</AI>
       </body>
     </html>
   );

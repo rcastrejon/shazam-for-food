@@ -40,8 +40,13 @@ function MainContent() {
   const captureInputRef = useRef<HTMLInputElement>(null);
   const diskInputRef = useRef<HTMLInputElement>(null);
 
-  const { state, onUploadPicture, onRetakePicture, onStartAnalysis } =
-    useGenerativeArea();
+  const {
+    state,
+    onUploadPicture,
+    onRetakePicture,
+    onStartAnalysis,
+    onSelectOptions,
+  } = useGenerativeArea();
 
   function startPictureUpload(type: "disk" | "capture") {
     if (type === "disk") {
@@ -111,7 +116,10 @@ function MainContent() {
         </div>
         {state.generation?.checkboxes && (
           <div className="mx-8 mt-4">
-            <SelectionContainer enabled={state.status === "selection"}>
+            <SelectionContainer
+              enabled={state.status === "selection"}
+              onSubmit={onSelectOptions}
+            >
               {state.generation.checkboxes.map((cb, i) => (
                 <SelectionItem label={cb.label} key={i} />
               ))}
