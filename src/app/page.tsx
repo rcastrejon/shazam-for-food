@@ -13,8 +13,8 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
-import { SelectionContainer, SelectionItem } from "./_components/selection";
-import { ThoughtsContainer, ThoughtsContent } from "./_components/thoughts";
+import { Suggestions, SuggestionsCheckbox } from "./_components/suggestions";
+import { Thoughts, ThoughtsContent } from "./_components/thoughts";
 import { useGenerativeArea } from "./_hooks/use-generative-area";
 
 export const maxDuration = 120;
@@ -41,17 +41,15 @@ function MainContent() {
   const diskInputRef = useRef<HTMLInputElement>(null);
 
   const {
+    status,
     state,
-    onUploadPicture,
-    onRetakePicture,
-    onStartAnalysis,
-    onSelectOptions,
+    actions: { loadPicture, retakePicture, startAnalysis, submitSuggestions },
   } = useGenerativeArea();
 
-  function startPictureUpload(type: "disk" | "capture") {
-    if (type === "disk") {
+  function startPictureUploadMethod(method: "disk" | "capture") {
+    if (method === "disk") {
       diskInputRef.current?.click();
-    } else if (type === "capture") {
+    } else if (method === "capture") {
       captureInputRef.current?.click();
     }
   }
@@ -64,7 +62,7 @@ function MainContent() {
 
     const reader = new FileReader();
     reader.onload = () => {
-      onUploadPicture(reader.result as string);
+      loadPicture(reader.result as string);
     };
     reader.readAsDataURL(file);
   }
@@ -73,7 +71,7 @@ function MainContent() {
     if (captureInputRef.current && diskInputRef.current) {
       captureInputRef.current.value = "";
       diskInputRef.current.value = "";
-      onRetakePicture();
+      retakePicture();
     }
   }
 
@@ -97,36 +95,42 @@ function MainContent() {
       <div className="mx-8 mt-4 flex flex-col items-center">
         <Viewfinder
           picture={state.picture}
-          startCamera={() => startPictureUpload("capture")}
+          startCamera={() => startPictureUploadMethod("capture")}
         />
         <Controls
-          status={state.status}
-          openCameraRoll={() => startPictureUpload("disk")}
-          startAnalysis={onStartAnalysis}
+          status={status}
+          openCameraRoll={() => startPictureUploadMethod("disk")}
+          startAnalysis={startAnalysis}
           retakePicture={handleRetakePicture}
         />
       </div>
-      <GenerativeContainer status={state.status}>
+      <ThoughtsContainer status={status}>
         <div className="mx-8 mt-4">
-          <ThoughtsContainer isGenerating={state.status === "thinking"}>
-            {state.generation?.thinking && (
-              <ThoughtsContent>{state.generation.thinking}</ThoughtsContent>
+          <Thoughts isGenerating={status === "analysis:thoughts-generation"}>
+            {state.analysis?.thinking && (
+              <ThoughtsContent>{state.analysis.thinking}</ThoughtsContent>
             )}
-          </ThoughtsContainer>
+          </Thoughts>
         </div>
-        {state.generation?.checkboxes && (
+      </ThoughtsContainer>
+      <SuggestionsContainer status={status}>
+        {state.analysis?.checkboxes && (
           <div className="mx-8 mt-4">
-            <SelectionContainer
-              enabled={state.status === "selection"}
-              onSubmit={onSelectOptions}
+            <Suggestions
+              isGenerating={status === "analysis:suggestions-generation"}
+              submitSuggestions={submitSuggestions}
             >
-              {state.generation.checkboxes.map((cb, i) => (
-                <SelectionItem label={cb.label} key={i} />
+              {state.analysis.checkboxes.map((suggestion, index) => (
+                <SuggestionsCheckbox
+                  key={index}
+                  label={suggestion?.label ?? ""}
+                />
               ))}
-            </SelectionContainer>
+            </Suggestions>
           </div>
         )}
-      </GenerativeContainer>
+      </SuggestionsContainer>
+      {state.breakdownUI}
     </main>
   );
 }
@@ -222,19 +226,36 @@ function Controls({
   return null;
 }
 
-function GenerativeContainer({
+function ThoughtsContainer({
   status,
   children,
 }: React.PropsWithChildren<{ status: Status }>) {
-  const isGenerativeContentVisible = [
-    "thinking",
-    "thinking-selection",
-    "selection",
-  ].includes(status);
+  const guard: Array<Status> = [
+    "analysis:thoughts-generation",
+    "analysis:suggestions-generation",
+    "analysis:suggestions-selection",
+    "end",
+  ];
 
-  if (!isGenerativeContentVisible) {
-    return null;
+  if (guard.includes(status)) {
+    return children;
   }
 
-  return <>{children}</>;
+  return null;
+}
+
+function SuggestionsContainer({
+  status,
+  children,
+}: React.PropsWithChildren<{ status: Status }>) {
+  const guard: Array<Status> = [
+    "analysis:suggestions-generation",
+    "analysis:suggestions-selection",
+  ];
+
+  if (guard.includes(status)) {
+    return children;
+  }
+
+  return null;
 }

@@ -10,10 +10,19 @@ import {
   getAIState,
   getMutableAIState,
 } from "ai/rsc";
-// import { ollama } from "ollama-ai-provider";
 import { z } from "zod";
 
 import type { PartialAnalysisSchema } from "./schemas";
+import {
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableRow,
+} from "~/components/ui/table";
+import {
+  BreakdownTable,
+  BreakdownTablePlaceholderRows,
+} from "../_components/breakdown-table";
 import { SYSTEM_PROMPT } from "./prompts";
 import { analysisSchema } from "./schemas";
 
@@ -22,7 +31,7 @@ export type ServerMessage = CoreMessage;
 export async function streamAnalysis(image: string) {
   "use server";
 
-  const history = getMutableAIState<AIType>();
+  const history = getMutableAIState<ServerAI>();
   const stream = createStreamableValue<PartialAnalysisSchema>();
 
   void (async () => {
@@ -36,17 +45,12 @@ export async function streamAnalysis(image: string) {
             type: "image",
             image,
           },
-          {
-            type: "text",
-            text: '"""Insert answer here"""',
-          },
         ],
       },
     ]);
 
     const { partialObjectStream } = await streamObject({
       model: openai("gpt-4o"),
-      // model: ollama("llava-llama3"), // TODO: Change to the final model
       temperature: 0.5,
       messages: history.get(),
       schema: analysisSchema,
@@ -62,7 +66,7 @@ export async function streamAnalysis(image: string) {
             content: `\
 **Thinking**: ${object.thinking}
 
-**Select from the following**: ${object.checkboxes.map((checkbox) => checkbox.label).join(", ")}
+**Checkboxes**: ${object.checkboxes.map((checkbox) => checkbox.label).join(", ")}
 `,
           },
         ]);
@@ -70,14 +74,9 @@ export async function streamAnalysis(image: string) {
     });
 
     for await (const partialObject of partialObjectStream) {
-      console.debug(partialObject);
-
       stream.update({
         thinking: partialObject.thinking,
-        checkboxes: partialObject.checkboxes?.filter(
-          (checkbox): checkbox is { label: string } =>
-            checkbox?.label !== undefined,
-        ),
+        checkboxes: partialObject.checkboxes,
       });
     }
 
@@ -89,11 +88,17 @@ export async function streamAnalysis(image: string) {
   };
 }
 
-export async function streamAnswer(selection: string[]) {
+export async function streamBreakdownUI(selection: string[]) {
   "use server";
 
-  const history = getAIState<AIType>();
-  const stream = createStreamableUI(<>Loading...</>);
+  const history = getAIState<ServerAI>();
+  const stream = createStreamableUI(
+    <BreakdownTable>
+      <TableBody>
+        <BreakdownTablePlaceholderRows n={4} />
+      </TableBody>
+    </BreakdownTable>,
+  );
 
   void (async () => {
     const { partialObjectStream } = await streamObject({
@@ -106,30 +111,73 @@ export async function streamAnswer(selection: string[]) {
           content: `\
 **Selection**: ${selection.join(", ")}.
 
-Given all of the above, print the full calorie breakdown of the dish from the picture.
+Determine the **exact** portions of each ingredient in the picture and give me the full calorie breakdown of each ingredient.
 `,
         },
       ],
       schema: z.object({
-        name: z.string().describe("The name of the dish"),
+        name: z
+          .string()
+          .describe("The name of the dish. Starting with 'It looks like'"),
         breakdown: z.array(
           z.object({
             ingredient: z.string(),
-            portions: z
-              .string()
-              .describe("The individual portion size of the ingredient"),
-            totalCalories: z.string(),
+            portions: z.string(),
+            totalCalories: z
+              .number()
+              .describe(
+                "The total calories of the ingredient as a whole number",
+              ),
           }),
         ),
       }),
+      onFinish: ({ object }) => {
+        if (!object) {
+          throw new Error("No object returned");
+        }
+
+        stream.done(
+          <BreakdownTable>
+            <TableBody>
+              {object.breakdown.map((item, i) => (
+                <TableRow key={i}>
+                  <TableCell>{item.ingredient}</TableCell>
+                  <TableCell>{item.portions}</TableCell>
+                  <TableCell>{item.totalCalories}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell colSpan={2}>Total</TableCell>
+                <TableCell>
+                  {object.breakdown.reduce(
+                    (acc, item) => acc + item.totalCalories,
+                    0,
+                  )}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+          </BreakdownTable>,
+        );
+      },
     });
 
     for await (const partialObject of partialObjectStream) {
-      console.debug(partialObject.breakdown);
-      stream.update(<>{partialObject.name}</>);
+      stream.update(
+        <BreakdownTable>
+          <TableBody>
+            {partialObject.breakdown?.map((item, i) => (
+              <TableRow key={i}>
+                <TableCell>{item?.ingredient}</TableCell>
+                <TableCell>{item?.portions}</TableCell>
+                <TableCell>{item?.totalCalories}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </BreakdownTable>,
+      );
     }
-
-    stream.done();
   })();
 
   return stream.value;
@@ -145,8 +193,8 @@ export const AI = createAI({
   initialUIState: [],
   actions: {
     streamAnalysis,
-    streamAnswer,
+    streamBreakdownUI,
   },
 });
 
-export type AIType = typeof AI;
+export type ServerAI = typeof AI;

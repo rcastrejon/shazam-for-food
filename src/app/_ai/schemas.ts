@@ -1,3 +1,4 @@
+import type { DeepPartial } from "ai";
 import { z } from "zod";
 
 export const analysisSchema = z.object({
@@ -9,7 +10,5 @@ export const analysisSchema = z.object({
   ),
 });
 
-const partialAnalysisSchema = analysisSchema.partial();
-
 export type AnalysisSchema = z.infer<typeof analysisSchema>;
-export type PartialAnalysisSchema = z.infer<typeof partialAnalysisSchema>;
+export type PartialAnalysisSchema = DeepPartial<AnalysisSchema>;

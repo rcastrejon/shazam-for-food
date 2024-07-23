@@ -28,7 +28,7 @@ function PlaceholderContent() {
   );
 }
 
-export function ThoughtsContainer({
+export function Thoughts({
   isGenerating,
   children,
 }: React.PropsWithChildren<{

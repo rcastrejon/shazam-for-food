@@ -4,20 +4,20 @@ import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 
-export function SelectionContainer({
+export function Suggestions({
   children,
-  enabled,
-  onSubmit,
+  isGenerating,
+  submitSuggestions,
 }: React.PropsWithChildren<{
-  enabled: boolean;
-  onSubmit: (options: string[]) => Promise<void>;
+  isGenerating: boolean;
+  submitSuggestions: (suggestions: string[]) => Promise<void>;
 }>) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const schema = z.record(z.string(), z.literal("on"));
     const formData = new FormData(e.currentTarget);
     const values = schema.parse(Object.fromEntries(formData.entries()));
-    await onSubmit(Object.keys(values));
+    await submitSuggestions(Object.keys(values));
   }
 
   return (
@@ -31,19 +31,23 @@ export function SelectionContainer({
         </h5>
         <p className="mt-1 text-xs text-muted-foreground">
           Please select <span className="underline">all</span> the options that
-          apply to your meal:
+          apply to your dish:
         </p>
       </div>
       <form className="mt-2 grid" onSubmit={handleSubmit}>
         <div className="space-y-2">{children}</div>
-        <Button className="mt-2 sm:hidden" type="submit" disabled={!enabled}>
+        <Button
+          className="mt-2 sm:hidden"
+          type="submit"
+          disabled={isGenerating}
+        >
           Submit
         </Button>
         <Button
           className="mt-4 hidden w-fit px-8 sm:block"
           type="submit"
           size="sm"
-          disabled={!enabled}
+          disabled={isGenerating}
         >
           Submit
         </Button>
@@ -52,7 +56,7 @@ export function SelectionContainer({
   );
 }
 
-export function SelectionItem({ label }: { label: string }) {
+export function SuggestionsCheckbox({ label }: { label: string }) {
   return (
     <div className="flex items-center space-x-4 rounded-lg px-4 py-3 transition-colors has-[:checked]:bg-accent sm:px-0 sm:py-0 sm:has-[:checked]:bg-transparent">
       <Checkbox id={label} name={label} />

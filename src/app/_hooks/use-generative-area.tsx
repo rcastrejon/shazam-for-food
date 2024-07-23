@@ -1,69 +1,75 @@
 import { useState } from "react";
 import { readStreamableValue, useActions } from "ai/rsc";
 
-import type { AIType } from "../_ai/actions";
+import type { ServerAI } from "../_ai/actions";
 import type { PartialAnalysisSchema } from "../_ai/schemas";
 
 export type Status =
   | "idle"
   | "picture-confirmation"
-  | "thinking"
-  | "thinking-selection"
-  | "selection"
-  | "answer";
+  | "analysis:thoughts-generation"
+  | "analysis:suggestions-generation"
+  | "analysis:suggestions-selection"
+  | "end";
 
 export function useGenerativeArea() {
-  const { streamAnalysis, streamAnswer } = useActions<AIType>();
+  const { streamAnalysis, streamBreakdownUI } = useActions<ServerAI>();
 
   const [status, setStatus] = useState<Status>("idle");
   const [picture, setPicture] = useState<string>();
-  const [generation, setGeneration] = useState<PartialAnalysisSchema>();
+  const [analysis, setAnalysis] = useState<PartialAnalysisSchema>();
+  const [breakdownUI, setBreakdownUI] = useState<React.ReactNode>();
 
-  function onUploadPicture(picture: string) {
-    setStatus(() => "picture-confirmation");
+  function loadPicture(picture: string) {
     setPicture(() => picture);
+    setStatus(() => "picture-confirmation");
   }
 
-  function onRetakePicture() {
-    setStatus(() => "idle");
+  function retakePicture() {
     setPicture(() => undefined);
+    setStatus(() => "idle");
   }
 
-  async function onStartAnalysis() {
+  async function startAnalysis() {
     if (!picture) {
       throw new Error("No picture to analyze");
     }
 
-    setStatus(() => "thinking");
+    setStatus(() => "analysis:thoughts-generation");
 
     const { object } = await streamAnalysis(picture);
     for await (const partialObject of readStreamableValue(object)) {
-      setGeneration(() => partialObject);
+      setAnalysis(() => partialObject);
       if (partialObject?.checkboxes) {
         // The object generation is sequential, so, if the checkboxes are
         // present, the model has finished thinking (CoT). We can now proceed
         // to the generation of the selection phase.
-        setStatus(() => "thinking-selection");
+        setStatus(() => "analysis:suggestions-generation");
       }
     }
-    setStatus(() => "selection");
+    // The generation phase of the analysis is done, we can now proceed to the
+    // extra step selection phase.
+    setStatus(() => "analysis:suggestions-selection");
   }
 
-  async function onSelectOptions(options: string[]) {
-    setStatus(() => "answer");
-    const result = await streamAnswer(options);
-    console.debug(result);
+  async function submitSuggestions(suggestions: string[]) {
+    setStatus(() => "end");
+    const result = await streamBreakdownUI(suggestions);
+    setBreakdownUI(() => result);
   }
 
   return {
+    status,
     state: {
-      status,
       picture,
-      generation,
+      analysis,
+      breakdownUI,
     },
-    onUploadPicture,
-    onRetakePicture,
-    onStartAnalysis,
-    onSelectOptions,
+    actions: {
+      loadPicture,
+      retakePicture,
+      startAnalysis,
+      submitSuggestions,
+    },
   };
 }
