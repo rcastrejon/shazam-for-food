@@ -137,45 +137,53 @@ Determine the **exact** portions of each ingredient in the picture and give me t
         }
 
         stream.done(
-          <BreakdownTable>
-            <TableBody>
-              {object.breakdown.map((item, i) => (
-                <TableRow key={i}>
-                  <TableCell>{item.ingredient}</TableCell>
-                  <TableCell>{item.portions}</TableCell>
-                  <TableCell>{item.totalCalories}</TableCell>
+          <div>
+            <h2 className="font-semibold tracking-tight">Calorie breakdown:</h2>
+            <p className="text-sm">{object.name}</p>
+            <BreakdownTable>
+              <TableBody>
+                {object.breakdown.map((item, i) => (
+                  <TableRow key={i}>
+                    <TableCell>{item.ingredient}</TableCell>
+                    <TableCell>{item.portions}</TableCell>
+                    <TableCell>{item.totalCalories}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell colSpan={2}>Total</TableCell>
+                  <TableCell>
+                    {object.breakdown.reduce(
+                      (acc, item) => acc + item.totalCalories,
+                      0,
+                    )}
+                  </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={2}>Total</TableCell>
-                <TableCell>
-                  {object.breakdown.reduce(
-                    (acc, item) => acc + item.totalCalories,
-                    0,
-                  )}
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          </BreakdownTable>,
+              </TableFooter>
+            </BreakdownTable>
+          </div>,
         );
       },
     });
 
     for await (const partialObject of partialObjectStream) {
       stream.update(
-        <BreakdownTable>
-          <TableBody>
-            {partialObject.breakdown?.map((item, i) => (
-              <TableRow key={i}>
-                <TableCell>{item?.ingredient}</TableCell>
-                <TableCell>{item?.portions}</TableCell>
-                <TableCell>{item?.totalCalories}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </BreakdownTable>,
+        <div>
+          <h2 className="font-semibold tracking-tight">Calorie breakdown:</h2>
+          <p className="text-sm">{partialObject.name}</p>
+          <BreakdownTable>
+            <TableBody>
+              {partialObject.breakdown?.map((item, i) => (
+                <TableRow key={i}>
+                  <TableCell>{item?.ingredient}</TableCell>
+                  <TableCell>{item?.portions}</TableCell>
+                  <TableCell>{item?.totalCalories}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </BreakdownTable>
+        </div>,
       );
     }
   })();

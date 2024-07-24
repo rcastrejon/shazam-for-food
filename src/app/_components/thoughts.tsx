@@ -37,7 +37,7 @@ export function Thoughts({
   const isPlaceholder = !children;
 
   return (
-    <div className="space-y-1.5 rounded-lg border p-3 text-sm">
+    <div className="space-y-1.5 rounded-lg border bg-card p-3 text-sm">
       <div className="flex items-center font-semibold leading-none tracking-tight">
         <Bot className="mr-2 h-4 w-4" />
         {isGenerating ? <AnimatedTitle /> : <span>Thoughts</span>}

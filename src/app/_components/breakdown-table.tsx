@@ -9,16 +9,20 @@ import {
 
 export function BreakdownTable({ children }: React.PropsWithChildren) {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="text-center">Ingredients</TableHead>
-          <TableHead className="text-center">Portions</TableHead>
-          <TableHead className="text-center">Calories</TableHead>
-        </TableRow>
-      </TableHeader>
-      {children}
-    </Table>
+    <div className="-mx-4 mt-2 overflow-x-auto sm:mx-0">
+      <div className="border-y sm:rounded-lg sm:border-x">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Ingredients</TableHead>
+              <TableHead>Portions</TableHead>
+              <TableHead>Calories</TableHead>
+            </TableRow>
+          </TableHeader>
+          {children}
+        </Table>
+      </div>
+    </div>
   );
 }
 

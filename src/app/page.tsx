@@ -1,7 +1,10 @@
 "use client";
 
 import { useRef } from "react";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { useWindowScroll } from "@uidotdev/usehooks";
 import { AnimatePresence, motion } from "framer-motion";
+import { Camera, Settings } from "lucide-react";
 
 import type { Status } from "./_hooks/use-generative-area";
 import { AspectRatio } from "~/components/ui/aspect-ratio";
@@ -17,22 +20,41 @@ import { Suggestions, SuggestionsCheckbox } from "./_components/suggestions";
 import { Thoughts, ThoughtsContent } from "./_components/thoughts";
 import { useGenerativeArea } from "./_hooks/use-generative-area";
 
-export const maxDuration = 120;
-
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky left-0 right-0 top-0 z-[99] bg-background/85 backdrop-blur-xl">
-        <div className="mx-4 grid h-[56px] place-content-center">
-          <span className="text-center text-lg font-semibold leading-none tracking-tight">
-            Shazam for Food
-          </span>
-        </div>
-      </header>
-      <div className="flex-grow">
-        <MainContent />
-      </div>
+      <Header />
+      <MainContent />
     </div>
+  );
+}
+
+function Header() {
+  const [state] = useWindowScroll();
+  const scrollY = state.y ?? 0;
+
+  return (
+    <header
+      className={cn(
+        "sticky top-0 z-50 w-full bg-transparent transition-all duration-300",
+        scrollY > 0 && "bg-background/85 backdrop-blur-xl",
+      )}
+    >
+      <div className="container flex h-14 items-center">
+        <div className="flex-1" />
+        <div className="min-w-max">
+          <div className="text-center text-lg font-semibold tracking-tight">
+            Shazam for Food
+          </div>
+        </div>
+        <div className="flex flex-1 justify-end">
+          <Button size="icon" variant="ghost">
+            <Settings className="h-5 w-5" />
+            <VisuallyHidden.Root>Settings</VisuallyHidden.Root>
+          </Button>
+        </div>
+      </div>
+    </header>
   );
 }
 
@@ -40,11 +62,7 @@ function MainContent() {
   const captureInputRef = useRef<HTMLInputElement>(null);
   const diskInputRef = useRef<HTMLInputElement>(null);
 
-  const {
-    status,
-    state,
-    actions: { loadPicture, retakePicture, startAnalysis, submitSuggestions },
-  } = useGenerativeArea();
+  const { status, state, actions } = useGenerativeArea();
 
   function startPictureUploadMethod(method: "disk" | "capture") {
     if (method === "disk") {
@@ -54,15 +72,15 @@ function MainContent() {
     }
   }
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
     if (!file?.type.startsWith("image/")) {
-      throw new Error("Invalid file type");
+      throw new Error("File is not an image");
     }
 
     const reader = new FileReader();
     reader.onload = () => {
-      loadPicture(reader.result as string);
+      actions.loadPicture(reader.result as string);
     };
     reader.readAsDataURL(file);
   }
@@ -71,41 +89,43 @@ function MainContent() {
     if (captureInputRef.current && diskInputRef.current) {
       captureInputRef.current.value = "";
       diskInputRef.current.value = "";
-      retakePicture();
+      actions.retakePicture();
     }
   }
 
   return (
-    <main className="mx-auto w-full max-w-screen-md">
-      <input
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handleInputChange}
-        ref={captureInputRef}
-        hidden
-      />
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleInputChange}
-        ref={diskInputRef}
-        hidden
-      />
-      <div className="mx-8 mt-4 flex flex-col items-center">
+    <main className="flex-1">
+      <div className="container mt-4 px-10">
+        <input
+          onChange={handleInputChange}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          ref={captureInputRef}
+          hidden
+        />
+        <input
+          onChange={handleInputChange}
+          type="file"
+          accept="image/*"
+          ref={diskInputRef}
+          hidden
+        />
         <Viewfinder
           picture={state.picture}
           startCamera={() => startPictureUploadMethod("capture")}
         />
-        <Controls
-          status={status}
-          openCameraRoll={() => startPictureUploadMethod("disk")}
-          startAnalysis={startAnalysis}
-          retakePicture={handleRetakePicture}
-        />
+        <div className="px-8">
+          <Controls
+            status={status}
+            openCameraRoll={() => startPictureUploadMethod("disk")}
+            startAnalysis={actions.startAnalysis}
+            retakePicture={handleRetakePicture}
+          />
+        </div>
       </div>
       <ThoughtsContainer status={status}>
-        <div className="mx-8 mt-4">
+        <div className="container mt-8">
           <Thoughts isGenerating={status === "analysis:thoughts-generation"}>
             {state.analysis?.thinking && (
               <ThoughtsContent>{state.analysis.thinking}</ThoughtsContent>
@@ -114,23 +134,20 @@ function MainContent() {
         </div>
       </ThoughtsContainer>
       <SuggestionsContainer status={status}>
-        {state.analysis?.checkboxes && (
-          <div className="mx-8 mt-4">
-            <Suggestions
-              isGenerating={status === "analysis:suggestions-generation"}
-              submitSuggestions={submitSuggestions}
-            >
-              {state.analysis.checkboxes.map((suggestion, index) => (
-                <SuggestionsCheckbox
-                  key={index}
-                  label={suggestion?.label ?? ""}
-                />
-              ))}
-            </Suggestions>
-          </div>
-        )}
+        <div className="container mt-8">
+          <Suggestions
+            isGenerating={status === "analysis:suggestions-generation"}
+            submitSuggestions={actions.submitSuggestions}
+          >
+            {state.analysis?.checkboxes?.map((checkbox, index) => (
+              <SuggestionsCheckbox key={index} label={checkbox?.label ?? ""} />
+            ))}
+          </Suggestions>
+        </div>
       </SuggestionsContainer>
-      {state.breakdownUI}
+      {state.breakdownUI && (
+        <div className="container mt-8">{state.breakdownUI}</div>
+      )}
     </main>
   );
 }
@@ -143,25 +160,42 @@ function Viewfinder({
   startCamera: () => void;
 }) {
   return (
-    <div className="w-full sm:w-[256px]">
+    <div className="mx-auto sm:w-[300px]">
       <AspectRatio ratio={1}>
-        <div className="absolute inset-0 grid overflow-hidden rounded-3xl bg-muted">
-          <div className={cn("m-auto", picture && "hidden")}>
-            <TooltipProvider delayDuration={350}>
+        <motion.div
+          className={cn(
+            "absolute inset-0 -z-50 rounded-3xl bg-[hsla(0,100%,50%,1)] opacity-60 bg-blend-normal blur-xl",
+            "bg-[radial-gradient(circle_at_40%_20%,hsla(28,100%,74%,1)_0%,transparent_50%),radial-gradient(circle_at_80%_0%,hsla(189,100%,56%,1)_0%,transparent_50%),radial-gradient(circle_at_0%_50%,hsla(355,100%,93%,1)_0%,transparent_50%),radial-gradient(circle_at_80%_50%,hsla(340,100%,76%,1)_0%,transparent_50%),radial-gradient(circle_at_0%_100%,hsla(22,100%,77%,1)_0%,transparent_50%),radial-gradient(circle_at_80%_100%,hsla(242,100%,70%,1)_0%,transparent_50%),radial-gradient(circle_at_0%_0%,hsla(343,100%,76%,1)_0%,transparent_50%)]",
+          )}
+          animate={{ opacity: [0.6, 0.8] }}
+          transition={{
+            duration: 2,
+            ease: "easeInOut",
+            repeat: Infinity,
+            repeatType: "reverse",
+          }}
+        ></motion.div>
+        <div className="absolute inset-0 overflow-hidden rounded-3xl border bg-muted shadow-classic">
+          <div
+            className={cn(
+              "absolute inset-0 z-0 grid min-w-max place-content-center gap-2",
+              picture && "hidden",
+            )}
+          >
+            <div className="h-[1rem]" />
+            <TooltipProvider delayDuration={250}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button className="mx-auto" onClick={startCamera}>
-                    Start camera
+                  <Button onClick={startCamera}>
+                    <Camera className="mr-2 h-4 w-4" /> Start camera
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-xs">
-                    Camera only available on mobile devices
-                  </p>
+                  <p className="text-xs">Camera is only available on mobile</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <p className="mt-1.5 text-center text-xs text-muted-foreground">
+            <p className="text-center text-xs text-muted-foreground">
               Image up to 20MB
             </p>
           </div>
@@ -169,11 +203,25 @@ function Viewfinder({
           <AnimatePresence>
             {picture && (
               <motion.img
-                className="pointer-events-none absolute h-full w-full touch-none object-cover"
-                initial={{ filter: "blur(20px)", scale: 1.5 }}
-                animate={{ filter: "blur(0px)", scale: 1 }}
-                exit={{ filter: "blur(20px)", scale: 1.5, opacity: 0 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                key="picture"
+                className="pointer-events-none absolute z-10 h-full w-full touch-none object-cover"
+                initial={{
+                  filter: "blur(20px)",
+                  scale: 1.5,
+                }}
+                animate={{
+                  filter: "blur(0px)",
+                  scale: 1,
+                }}
+                exit={{
+                  filter: "blur(20px)",
+                  scale: 1.5,
+                  opacity: 0,
+                }}
+                transition={{
+                  duration: 0.3,
+                  ease: "easeOut",
+                }}
                 src={picture}
                 alt="A user uploaded picture."
                 draggable={false}
@@ -201,28 +249,26 @@ function Controls({
 }: ControlsProps) {
   if (status === "idle") {
     return (
-      <div className="mt-2 w-fit space-y-2">
-        <div className="text-center text-xs leading-none text-muted-foreground">
-          or
-        </div>
-        <Button onClick={openCameraRoll} size="sm" variant="secondary">
+      <div className="mx-auto mt-2 w-max space-y-2">
+        <div className="text-center text-xs text-muted-foreground">or</div>
+        <Button size="sm" variant="outline" onClick={openCameraRoll}>
           Upload from camera roll
         </Button>
       </div>
     );
   }
-
   if (status === "picture-confirmation") {
     return (
-      <div className="mt-4 grid w-fit space-y-2">
-        <Button onClick={startAnalysis}>Continue</Button>
-        <Button variant="outline" onClick={retakePicture}>
+      <div className="mt-4 grid space-y-2">
+        <Button size="lg" onClick={startAnalysis}>
+          Confirm
+        </Button>
+        <Button size="lg" variant="outline" onClick={retakePicture}>
           Retake picture
         </Button>
       </div>
     );
   }
-
   return null;
 }
 
@@ -230,17 +276,16 @@ function ThoughtsContainer({
   status,
   children,
 }: React.PropsWithChildren<{ status: Status }>) {
-  const guard: Array<Status> = [
+  const guard: Status[] = [
     "analysis:thoughts-generation",
     "analysis:suggestions-generation",
     "analysis:suggestions-selection",
+    "analysis:suggestions-generation",
     "end",
   ];
-
   if (guard.includes(status)) {
-    return children;
+    return <>{children}</>;
   }
-
   return null;
 }
 
@@ -248,14 +293,12 @@ function SuggestionsContainer({
   status,
   children,
 }: React.PropsWithChildren<{ status: Status }>) {
-  const guard: Array<Status> = [
+  const guard: Status[] = [
     "analysis:suggestions-generation",
     "analysis:suggestions-selection",
   ];
-
   if (guard.includes(status)) {
-    return children;
+    return <>{children}</>;
   }
-
   return null;
 }
