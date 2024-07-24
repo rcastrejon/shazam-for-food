@@ -138,7 +138,7 @@ Determine the **exact** portions of each ingredient in the picture and give me t
 
         stream.done(
           <div>
-            <h2 className="font-semibold tracking-tight">Calorie breakdown:</h2>
+            <h2 className="font-semibold tracking-tight">Calorie breakdown</h2>
             <p className="text-sm">{object.name}</p>
             <BreakdownTable>
               <TableBody>
@@ -170,7 +170,7 @@ Determine the **exact** portions of each ingredient in the picture and give me t
     for await (const partialObject of partialObjectStream) {
       stream.update(
         <div>
-          <h2 className="font-semibold tracking-tight">Calorie breakdown:</h2>
+          <h2 className="font-semibold tracking-tight">Calorie breakdown</h2>
           <p className="text-sm">{partialObject.name}</p>
           <BreakdownTable>
             <TableBody>

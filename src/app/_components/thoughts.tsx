@@ -23,7 +23,6 @@ function PlaceholderContent() {
       <Skeleton className="h-[0.75rem] w-full" />
       <Skeleton className="h-[0.75rem] w-full" />
       <Skeleton className="h-[0.75rem] w-full" />
-      <Skeleton className="h-[0.75rem] w-full" />
     </div>
   );
 }

@@ -30,13 +30,13 @@ export function BreakdownTablePlaceholderRows({ n }: { n: number }) {
   return new Array(n).fill(0).map((_, i) => (
     <TableRow key={i}>
       <TableCell>
-        <Skeleton className="mx-auto h-4 w-[128px]" />
+        <Skeleton className="h-4 w-[128px]" />
       </TableCell>
       <TableCell>
-        <Skeleton className="mx-auto h-4 w-[128px]" />
+        <Skeleton className="h-4 w-[128px]" />
       </TableCell>
       <TableCell>
-        <Skeleton className="mx-auto h-4 w-[128px]" />
+        <Skeleton className="h-4 w-[128px]" />
       </TableCell>
     </TableRow>
   ));

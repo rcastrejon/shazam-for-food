@@ -94,8 +94,8 @@ function MainContent() {
   }
 
   return (
-    <main className="flex-1">
-      <div className="container mt-4 px-10">
+    <main className="mb-4 flex-1">
+      <div className="container mt-4">
         <input
           onChange={handleInputChange}
           type="file"
@@ -115,7 +115,7 @@ function MainContent() {
           picture={state.picture}
           startCamera={() => startPictureUploadMethod("capture")}
         />
-        <div className="px-8">
+        <div className="px-10">
           <Controls
             status={status}
             openCameraRoll={() => startPictureUploadMethod("disk")}
@@ -259,11 +259,9 @@ function Controls({
   }
   if (status === "picture-confirmation") {
     return (
-      <div className="mt-4 grid space-y-2">
-        <Button size="lg" onClick={startAnalysis}>
-          Confirm
-        </Button>
-        <Button size="lg" variant="outline" onClick={retakePicture}>
+      <div className="mt-4 grid space-y-2 sm:mx-auto sm:w-max">
+        <Button onClick={startAnalysis}>Confirm</Button>
+        <Button variant="outline" onClick={retakePicture}>
           Retake picture
         </Button>
       </div>
