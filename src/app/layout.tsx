@@ -1,7 +1,9 @@
-import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { LanguageProvider } from "@inlang/paraglide-next";
 
 import { cn } from "~/lib/utils";
+import * as m from "~/paraglide/messages.js";
+import { languageTag } from "~/paraglide/runtime.js";
 import { AI } from "./_ai/actions";
 
 import "./globals.css";
@@ -12,10 +14,12 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-export const metadata: Metadata = {
-  title: "Shazam for Food",
-  description: "It's like Shazam, but for food.",
-};
+export async function generateMetadata() {
+  return {
+    title: m.title(),
+    description: m.meta_description(),
+  };
+}
 
 export default function RootLayout({
   children,
@@ -23,15 +27,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={cn(
-          "bg-background font-sans text-foreground antialiased",
-          inter.variable,
-        )}
-      >
-        <AI>{children}</AI>
-      </body>
-    </html>
+    <LanguageProvider>
+      <html lang={languageTag()}>
+        <body
+          className={cn(
+            "bg-background font-sans text-foreground antialiased",
+            inter.variable,
+          )}
+        >
+          <AI>{children}</AI>
+        </body>
+      </html>
+    </LanguageProvider>
   );
 }

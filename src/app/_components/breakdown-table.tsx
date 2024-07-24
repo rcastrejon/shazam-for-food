@@ -6,21 +6,33 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import * as m from "~/paraglide/messages.js";
 
-export function BreakdownTable({ children }: React.PropsWithChildren) {
+export function BreakdownTable({
+  description,
+  children,
+}: React.PropsWithChildren<{
+  description: string;
+}>) {
   return (
-    <div className="-mx-4 mt-2 overflow-x-auto sm:mx-0">
-      <div className="border-y sm:rounded-lg sm:border-x">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Ingredients</TableHead>
-              <TableHead>Portions</TableHead>
-              <TableHead>Calories</TableHead>
-            </TableRow>
-          </TableHeader>
-          {children}
-        </Table>
+    <div>
+      <h2 className="font-semibold tracking-tight">
+        {m.c_breakdown_table_title()}
+      </h2>
+      <p className="text-sm">{description}</p>
+      <div className="-mx-4 mt-2 overflow-x-auto sm:mx-0">
+        <div className="border-y sm:rounded-lg sm:border-x">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{m.c_breakdown_table_ingredients()}</TableHead>
+                <TableHead>{m.c_breakdown_table_portions()}</TableHead>
+                <TableHead>{m.c_breakdown_table_calories()}</TableHead>
+              </TableRow>
+            </TableHeader>
+            {children}
+          </Table>
+        </div>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import "server-only";
 
 import type { CoreMessage } from "ai";
 import { openai } from "@ai-sdk/openai";
+import { initializeLanguage } from "@inlang/paraglide-next";
 import { streamObject } from "ai";
 import {
   createAI,
@@ -19,12 +20,14 @@ import {
   TableFooter,
   TableRow,
 } from "~/components/ui/table";
+import { languageTag } from "~/paraglide/runtime";
 import {
   BreakdownTable,
   BreakdownTablePlaceholderRows,
 } from "../_components/breakdown-table";
-import { SYSTEM_PROMPT } from "./prompts";
 import { analysisSchema } from "./schemas";
+
+initializeLanguage();
 
 export type ServerMessage = CoreMessage;
 
@@ -34,10 +37,30 @@ export async function streamAnalysis(image: string) {
   const history = getMutableAIState<ServerAI>();
   const stream = createStreamableValue<PartialAnalysisSchema>();
 
+  const language = languageTag() === "en" ? "English" : "Spanish";
+
   void (async () => {
-    // Add the user input to the history
+    // Add the system prompt to the history, so the AI knows the rules.
+    // Also, add the image to the history.
     history.update([
-      ...history.get(),
+      {
+        role: "system",
+        content: `\
+You have perfect vision and pay great attention to detail which makes you an expert at identifying ingredients in food. You are tasked with figuring out the exact ingredients shown in the picture and give the dish an appropriate name. Follow these step-by-step instructions:
+
+**Step 1** - First, think step-by-step in 'thinking' field and analyze every part of the image. You will be as descriptive as possible; describe the portions, harmony of flavors, and your certainty about each ingredient. Discuss any uncertainties and provide potential options to clear them up.
+
+**Step 2** - Before providing a list of ingredients, and to clear up any uncertainties you have, I will help you out. For that, provide a list of checkboxes I can choose from. So, for every uncertainty, you will give me different options and I will select the ones that best apply to the dish. Assume that any option not chosen does not apply.
+
+**RULES**:
+- The 'thinking' field should be explicit, written in natural language, easy to follow and written in plain text.
+- The 'checkboxes' field should only be used to clear up uncertainties. If you are certain about an ingredient, you should not include it.
+- Do not include ambiguous options in the 'checkboxes' field. For example, do not include "**Other** type of sauce", "**Other** type of cheese", etc. Instead, provide a list of **specific options** that are relevant to the dish.
+- Ensure the 'checkboxes' field is a list of clickable checkboxes; the user cannot provide custom text.
+- Every message you send should be in **${language}**, no matter the language of the user.
+- **Carefully follow these instructions.**\
+`,
+      },
       {
         role: "user",
         content: [
@@ -93,7 +116,7 @@ export async function streamBreakdownUI(selection: string[]) {
 
   const history = getAIState<ServerAI>();
   const stream = createStreamableUI(
-    <BreakdownTable>
+    <BreakdownTable description="...">
       <TableBody>
         <BreakdownTablePlaceholderRows n={4} />
       </TableBody>
@@ -137,53 +160,45 @@ Determine the **exact** portions of each ingredient in the picture and give me t
         }
 
         stream.done(
-          <div>
-            <h2 className="font-semibold tracking-tight">Calorie breakdown</h2>
-            <p className="text-sm">{object.name}</p>
-            <BreakdownTable>
-              <TableBody>
-                {object.breakdown.map((item, i) => (
-                  <TableRow key={i}>
-                    <TableCell>{item.ingredient}</TableCell>
-                    <TableCell>{item.portions}</TableCell>
-                    <TableCell>{item.totalCalories}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableCell colSpan={2}>Total</TableCell>
-                  <TableCell>
-                    {object.breakdown.reduce(
-                      (acc, item) => acc + item.totalCalories,
-                      0,
-                    )}
-                  </TableCell>
+          <BreakdownTable description={object.name}>
+            <TableBody>
+              {object.breakdown.map((item, i) => (
+                <TableRow key={i}>
+                  <TableCell>{item.ingredient}</TableCell>
+                  <TableCell>{item.portions}</TableCell>
+                  <TableCell>{item.totalCalories}</TableCell>
                 </TableRow>
-              </TableFooter>
-            </BreakdownTable>
-          </div>,
+              ))}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell colSpan={2}>Total</TableCell>
+                <TableCell>
+                  {object.breakdown.reduce(
+                    (acc, item) => acc + item.totalCalories,
+                    0,
+                  )}
+                </TableCell>
+              </TableRow>
+            </TableFooter>
+          </BreakdownTable>,
         );
       },
     });
 
     for await (const partialObject of partialObjectStream) {
       stream.update(
-        <div>
-          <h2 className="font-semibold tracking-tight">Calorie breakdown</h2>
-          <p className="text-sm">{partialObject.name}</p>
-          <BreakdownTable>
-            <TableBody>
-              {partialObject.breakdown?.map((item, i) => (
-                <TableRow key={i}>
-                  <TableCell>{item?.ingredient}</TableCell>
-                  <TableCell>{item?.portions}</TableCell>
-                  <TableCell>{item?.totalCalories}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </BreakdownTable>
-        </div>,
+        <BreakdownTable description={partialObject.name ?? ""}>
+          <TableBody>
+            {partialObject.breakdown?.map((item, i) => (
+              <TableRow key={i}>
+                <TableCell>{item?.ingredient}</TableCell>
+                <TableCell>{item?.portions}</TableCell>
+                <TableCell>{item?.totalCalories}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </BreakdownTable>,
       );
     }
   })();
@@ -194,10 +209,7 @@ Determine the **exact** portions of each ingredient in the picture and give me t
 export type AIState = ServerMessage[];
 
 export const AI = createAI({
-  initialAIState: [
-    // Set the initial state of the AI history with the system prompt.
-    SYSTEM_PROMPT,
-  ] as AIState,
+  initialAIState: [] as AIState,
   initialUIState: [],
   actions: {
     streamAnalysis,

@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
+import * as m from "~/paraglide/messages.js";
 
 export function Suggestions({
   children,
@@ -27,11 +28,10 @@ export function Suggestions({
           <Info className="mr-4 h-4 w-4" />
         </div>
         <h5 className="text-sm leading-none tracking-tight text-muted-foreground">
-          Additional information required!
+          {m.c_suggestions_title()}
         </h5>
         <p className="mt-1 text-xs text-muted-foreground">
-          Please select <span className="underline">all</span> the options that
-          apply to your dish:
+          {m.c_suggestions_description()}
         </p>
       </div>
       <form className="mt-2 grid" onSubmit={handleSubmit}>
@@ -41,7 +41,7 @@ export function Suggestions({
           type="submit"
           disabled={isGenerating}
         >
-          Submit
+          {m.c_suggestions_submit()}
         </Button>
         <Button
           className="mt-4 hidden w-fit px-8 sm:block"
@@ -49,7 +49,7 @@ export function Suggestions({
           size="sm"
           disabled={isGenerating}
         >
-          Submit
+          {m.c_suggestions_submit()}
         </Button>
       </form>
     </div>

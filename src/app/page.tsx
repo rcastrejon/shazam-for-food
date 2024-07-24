@@ -16,6 +16,7 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
+import * as m from "~/paraglide/messages.js";
 import { Suggestions, SuggestionsCheckbox } from "./_components/suggestions";
 import { Thoughts, ThoughtsContent } from "./_components/thoughts";
 import { useGenerativeArea } from "./_hooks/use-generative-area";
@@ -44,13 +45,13 @@ function Header() {
         <div className="flex-1" />
         <div className="min-w-max">
           <div className="text-center text-lg font-semibold tracking-tight">
-            Shazam for Food
+            {m.title()}
           </div>
         </div>
         <div className="flex flex-1 justify-end">
           <Button size="icon" variant="ghost">
             <Settings className="h-5 w-5" />
-            <VisuallyHidden.Root>Settings</VisuallyHidden.Root>
+            <VisuallyHidden.Root>{m.app_settings()}</VisuallyHidden.Root>
           </Button>
         </div>
       </div>
@@ -187,16 +188,16 @@ function Viewfinder({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button onClick={startCamera}>
-                    <Camera className="mr-2 h-4 w-4" /> Start camera
+                    <Camera className="mr-2 h-4 w-4" /> {m.app_startCamera()}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-xs">Camera is only available on mobile</p>
+                  <p className="text-xs">{m.app_cameraWarning()}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <p className="text-center text-xs text-muted-foreground">
-              Image up to 20MB
+              {m.app_imageLimit()}
             </p>
           </div>
 
@@ -223,7 +224,7 @@ function Viewfinder({
                   ease: "easeOut",
                 }}
                 src={picture}
-                alt="A user uploaded picture."
+                alt={m.app_pictureAlt()}
                 draggable={false}
               />
             )}
@@ -250,9 +251,11 @@ function Controls({
   if (status === "idle") {
     return (
       <div className="mx-auto mt-2 w-max space-y-2">
-        <div className="text-center text-xs text-muted-foreground">or</div>
+        <div className="text-center text-xs text-muted-foreground">
+          {m.or()}
+        </div>
         <Button size="sm" variant="outline" onClick={openCameraRoll}>
-          Upload from camera roll
+          {m.app_uploadPicture()}
         </Button>
       </div>
     );
@@ -260,9 +263,9 @@ function Controls({
   if (status === "picture-confirmation") {
     return (
       <div className="mt-4 grid space-y-2 sm:mx-auto sm:w-max">
-        <Button onClick={startAnalysis}>Confirm</Button>
+        <Button onClick={startAnalysis}>{m.app_confirm()}</Button>
         <Button variant="outline" onClick={retakePicture}>
-          Retake picture
+          {m.app_retake()}
         </Button>
       </div>
     );

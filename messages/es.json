@@ -1,0 +1,23 @@
+{
+  "$schema": "https://inlang.com/schema/inlang-message-format",
+  "title": "Shazam para la comida",
+  "or": "o",
+  "meta_description": "Es como Shazam, pero para la comida.",
+  "app_settings": "Ajustes",
+  "app_startCamera": "Iniciar cámara",
+  "app_cameraWarning": "La cámara solo está disponible en dispositivos móviles.",
+  "app_imageLimit": "Imagen de hasta 20MB",
+  "app_uploadPicture": "Subir desde el dispositivo",
+  "app_pictureAlt": "Una imagen subida por un usuario.",
+  "app_confirm": "Confirmar",
+  "app_retake": "Volver a tomar la foto",
+  "c_thinking": "Pensando",
+  "c_thoughts": "Pensamientos",
+  "c_suggestions_title": "¡Información adicional requerida!",
+  "c_suggestions_description": "Por favor, selecciona todas las opciones que apliquen a tu plato:",
+  "c_suggestions_submit": "Enviar",
+  "c_breakdown_table_title": "Desglose de calorías",
+  "c_breakdown_table_ingredients": "Ingredientes",
+  "c_breakdown_table_portions": "Porciones",
+  "c_breakdown_table_calories": "Calorías"
+}
