@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Bot } from "lucide-react";
 
-import { Skeleton } from "~/components/ui/skeleton";
 import * as m from "~/paraglide/messages.js";
+import { Skeleton } from "~/components/ui/skeleton";
 
 function AnimatedTitle() {
   const [counter, setCounter] = useState(0);

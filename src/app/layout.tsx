@@ -1,9 +1,9 @@
 import { Inter } from "next/font/google";
 import { LanguageProvider } from "@inlang/paraglide-next";
 
-import { cn } from "~/lib/utils";
 import * as m from "~/paraglide/messages.js";
 import { languageTag } from "~/paraglide/runtime.js";
+import { cn } from "~/lib/utils";
 import { AI } from "./_ai/actions";
 
 import "./globals.css";

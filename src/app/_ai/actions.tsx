@@ -1,7 +1,8 @@
 import "server-only";
 
 import type { CoreMessage } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { cookies } from "next/headers";
+import { createOpenAI } from "@ai-sdk/openai";
 import { initializeLanguage } from "@inlang/paraglide-next";
 import { streamObject } from "ai";
 import {
@@ -13,6 +14,7 @@ import {
 } from "ai/rsc";
 import { z } from "zod";
 
+import { languageTag } from "~/paraglide/runtime";
 import type { PartialAnalysisSchema } from "./schemas";
 import {
   TableBody,
@@ -20,7 +22,6 @@ import {
   TableFooter,
   TableRow,
 } from "~/components/ui/table";
-import { languageTag } from "~/paraglide/runtime";
 import {
   BreakdownTable,
   BreakdownTablePlaceholderRows,
@@ -29,7 +30,13 @@ import { analysisSchema } from "./schemas";
 
 initializeLanguage();
 
-export type ServerMessage = CoreMessage;
+const openai = () => {
+  const cookieStore = cookies();
+  return createOpenAI({
+    apiKey: cookieStore.get("X-API-KEY")?.value,
+    compatibility: "strict",
+  });
+};
 
 export async function streamAnalysis(image: string) {
   "use server";
@@ -73,7 +80,7 @@ You have perfect vision and pay great attention to detail which makes you an exp
     ]);
 
     const { partialObjectStream } = await streamObject({
-      model: openai("gpt-4o"),
+      model: openai()("gpt-4o"),
       temperature: 0.5,
       messages: history.get(),
       schema: analysisSchema,
@@ -125,7 +132,7 @@ export async function streamBreakdownUI(selection: string[]) {
 
   void (async () => {
     const { partialObjectStream } = await streamObject({
-      model: openai("gpt-4o"),
+      model: openai()("gpt-4o"),
       temperature: 0.7,
       messages: [
         ...history,
@@ -205,6 +212,8 @@ Determine the **exact** portions of each ingredient in the picture and give me t
 
   return stream.value;
 }
+
+export type ServerMessage = CoreMessage;
 
 export type AIState = ServerMessage[];
 

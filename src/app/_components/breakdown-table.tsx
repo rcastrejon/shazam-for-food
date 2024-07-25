@@ -1,3 +1,4 @@
+import * as m from "~/paraglide/messages.js";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   Table,
@@ -6,7 +7,6 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import * as m from "~/paraglide/messages.js";
 
 export function BreakdownTable({
   description,

@@ -1,9 +1,9 @@
 import { Info } from "lucide-react";
 import { z } from "zod";
 
+import * as m from "~/paraglide/messages.js";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import * as m from "~/paraglide/messages.js";
 
 export function Suggestions({
   children,

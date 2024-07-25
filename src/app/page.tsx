@@ -1,14 +1,35 @@
 "use client";
 
 import { useRef } from "react";
+import { DialogDescription } from "@radix-ui/react-dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { useWindowScroll } from "@uidotdev/usehooks";
 import { AnimatePresence, motion } from "framer-motion";
 import { Camera, Settings } from "lucide-react";
+import { z } from "zod";
 
+import * as m from "~/paraglide/messages.js";
+import { availableLanguageTags } from "~/paraglide/runtime";
 import type { Status } from "./_hooks/use-generative-area";
 import { AspectRatio } from "~/components/ui/aspect-ratio";
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
@@ -16,10 +37,11 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
-import * as m from "~/paraglide/messages.js";
 import { Suggestions, SuggestionsCheckbox } from "./_components/suggestions";
 import { Thoughts, ThoughtsContent } from "./_components/thoughts";
 import { useGenerativeArea } from "./_hooks/use-generative-area";
+import { setSettings, useSettingsStore } from "./_hooks/use-settings-store";
+import { useStore } from "./_hooks/use-store";
 
 export default function Home() {
   return (
@@ -42,20 +64,95 @@ function Header() {
       )}
     >
       <div className="container flex h-14 items-center">
-        <div className="flex-1" />
+        <div className="flex-1 sm:hidden" />
         <div className="min-w-max">
           <div className="text-center text-lg font-semibold tracking-tight">
             {m.title()}
           </div>
         </div>
         <div className="flex flex-1 justify-end">
-          <Button size="icon" variant="ghost">
-            <Settings className="h-5 w-5" />
-            <VisuallyHidden.Root>{m.app_settings()}</VisuallyHidden.Root>
-          </Button>
+          <SettingsButton />
         </div>
       </div>
     </header>
+  );
+}
+
+const settingsFormSchema = z.object({
+  "api-key": z.string().optional(),
+  language: z.enum(availableLanguageTags).optional(),
+});
+
+function SettingsButton() {
+  const settings = useStore(useSettingsStore, (state) => state);
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = settingsFormSchema.parse(
+      Object.fromEntries(formData.entries()),
+    );
+    setSettings({
+      "X-API-KEY": data["api-key"],
+      NEXT_LOCALE: data.language,
+    });
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+  }
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button size="icon" variant="ghost">
+          <Settings className="h-5 w-5" />
+          <VisuallyHidden.Root>{m.app_settings()}</VisuallyHidden.Root>
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{m.app_settings()}</DialogTitle>
+          <DialogDescription>{m.app_settings_description()}</DialogDescription>
+        </DialogHeader>
+        <form className="grid gap-4" autoComplete="off" onSubmit={handleSubmit}>
+          <div className="grid gap-2">
+            <Label htmlFor="api-key">{m.app_settings_key()}</Label>
+            <Input
+              id="api-key"
+              name="api-key"
+              defaultValue={settings?.["X-API-KEY"]}
+              type="password"
+              autoComplete="off"
+            />
+            <p className="text-xs text-muted-foreground">
+              {m.app_settings_key_description()}
+            </p>
+          </div>
+          <div className="grid gap-2">
+            <Label>{m.app_settings_language()}</Label>
+            <Select name="language" defaultValue={settings?.NEXT_LOCALE}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue
+                  placeholder={m.app_settings_language_placeholder()}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="en">{m.english()}</SelectItem>
+                  <SelectItem value="es">{m.spanish()}</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {m.app_settings_language_description()}
+            </p>
+          </div>
+          <div className="grid sm:flex sm:justify-end">
+            <Button type="submit">{m.app_settings_language_button()}</Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
