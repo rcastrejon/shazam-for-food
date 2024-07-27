@@ -6,6 +6,16 @@ import { persist } from "zustand/middleware";
 
 import { availableLanguageTags } from "~/paraglide/runtime";
 
+/*
+ * In a typical scenario, cookies are not the preferred method for storing
+ * settings due to security and size limitations. However, in this specific
+ * case, Paraglide utilizes cookies to store the current language setting.
+ * To streamline our implementation, we leverage this existing cookie
+ * mechanism to also store the API key. This approach ensures that both the
+ * language setting and the API key are accessible to the server, simplifying
+ * the overall architecture and avoiding the need for additional storage solutions.
+ */
+
 const cookies = new Cookies(null, {
   path: "/",
   sameSite: "lax",
@@ -14,7 +24,7 @@ const cookies = new Cookies(null, {
 
 const storageSchema = z.object({
   NEXT_LOCALE: z.enum(availableLanguageTags).optional(),
-  "X-API-KEY": z.string().optional(),
+  API_KEY: z.string().optional(),
 });
 
 type StorageSchema = z.infer<typeof storageSchema>;
@@ -45,7 +55,7 @@ export const useSettingsStore = create<StorageSchema>()(
   persist(
     (_) => ({
       NEXT_LOCALE: undefined,
-      "X-API-KEY": undefined,
+      API_KEY: "",
     }),
     {
       name: "settings-storage", // useless in our implementation of a cookie storage

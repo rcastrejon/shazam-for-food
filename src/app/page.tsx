@@ -63,7 +63,7 @@ function Header() {
         scrollY > 0 && "bg-background/85 backdrop-blur-xl",
       )}
     >
-      <div className="container flex h-14 items-center">
+      <div className="container flex h-14 max-w-screen-2xl items-center">
         <div className="flex-1 sm:hidden" />
         <div className="min-w-max">
           <div className="text-center text-lg font-semibold tracking-tight">
@@ -79,7 +79,7 @@ function Header() {
 }
 
 const settingsFormSchema = z.object({
-  "api-key": z.string().optional(),
+  apiKey: z.string().optional(),
   language: z.enum(availableLanguageTags).optional(),
 });
 
@@ -93,10 +93,12 @@ function SettingsButton() {
       Object.fromEntries(formData.entries()),
     );
     setSettings({
-      "X-API-KEY": data["api-key"],
+      API_KEY: data.apiKey,
       NEXT_LOCALE: data.language,
     });
     if (typeof window !== "undefined") {
+      // User might change the language, so we reload the page to apply the
+      // changes.
       window.location.reload();
     }
   }
@@ -112,15 +114,14 @@ function SettingsButton() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{m.app_settings()}</DialogTitle>
-          <DialogDescription>{m.app_settings_description()}</DialogDescription>
         </DialogHeader>
         <form className="grid gap-4" autoComplete="off" onSubmit={handleSubmit}>
           <div className="grid gap-2">
-            <Label htmlFor="api-key">{m.app_settings_key()}</Label>
+            <Label htmlFor="apiKey">{m.app_settings_key()}</Label>
             <Input
-              id="api-key"
-              name="api-key"
-              defaultValue={settings?.["X-API-KEY"]}
+              id="apiKey"
+              name="apiKey"
+              defaultValue={settings?.API_KEY}
               type="password"
               autoComplete="off"
             />
@@ -131,10 +132,8 @@ function SettingsButton() {
           <div className="grid gap-2">
             <Label>{m.app_settings_language()}</Label>
             <Select name="language" defaultValue={settings?.NEXT_LOCALE}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue
-                  placeholder={m.app_settings_language_placeholder()}
-                />
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
@@ -197,15 +196,15 @@ function MainContent() {
         <input
           onChange={handleInputChange}
           type="file"
-          accept="image/*"
           capture="environment"
+          accept="image/png, image/jpeg"
           ref={captureInputRef}
           hidden
         />
         <input
           onChange={handleInputChange}
           type="file"
-          accept="image/*"
+          accept="image/png, image/jpeg"
           ref={diskInputRef}
           hidden
         />
