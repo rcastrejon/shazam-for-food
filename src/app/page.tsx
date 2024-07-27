@@ -192,7 +192,7 @@ function MainContent() {
 
   return (
     <main className="mb-4 flex-1">
-      <div className="container mt-4">
+      <div className="container mt-4 px-12">
         <input
           onChange={handleInputChange}
           type="file"
@@ -223,7 +223,11 @@ function MainContent() {
       </div>
       <ThoughtsContainer status={status}>
         <div className="container mt-8">
-          <Thoughts isGenerating={status === "analysis:thoughts-generation"}>
+          <Thoughts
+            status={
+              status === "analysis:thoughts-generation" ? "generating" : "done"
+            }
+          >
             {state.analysis?.thinking && (
               <ThoughtsContent>{state.analysis.thinking}</ThoughtsContent>
             )}
@@ -272,7 +276,7 @@ function Viewfinder({
             repeatType: "reverse",
           }}
         ></motion.div>
-        <div className="absolute inset-0 overflow-hidden rounded-3xl border bg-muted shadow-classic">
+        <div className="absolute inset-0 overflow-hidden rounded-lg border bg-muted shadow-classic">
           <div
             className={cn(
               "absolute inset-0 z-0 grid min-w-max place-content-center gap-2",
