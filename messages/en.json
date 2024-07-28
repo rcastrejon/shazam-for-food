@@ -18,6 +18,7 @@
   "app_pictureAlt": "An user uploaded picture.",
   "app_confirm": "Confirm",
   "app_retake": "Retake picture",
+  "app_generation_error": "An error occurred while analyzing the picture. Please, make sure that you have set the correct OpenAI API key.",
   "c_thinking": "Thinking",
   "c_thoughts": "Thoughts",
   "c_suggestions_title": "Additional information required!",

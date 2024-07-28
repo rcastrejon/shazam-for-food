@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { readStreamableValue, useActions } from "ai/rsc";
 
+import * as m from "~/paraglide/messages";
 import type { ServerAI } from "../_ai/actions";
 import type { PartialAnalysisSchema } from "../_ai/schemas";
 
@@ -38,24 +39,36 @@ export function useGenerativeArea() {
     setStatus(() => "analysis:thoughts-generation");
 
     const { object } = await streamAnalysis(picture);
-    for await (const partialObject of readStreamableValue(object)) {
-      setAnalysis(() => partialObject);
-      if (partialObject?.checkboxes) {
-        // The object generation is sequential, so, if the checkboxes are
-        // present, the model has finished thinking (CoT). We can now proceed
-        // to the generation of the selection phase.
-        setStatus(() => "analysis:suggestions-generation");
+    try {
+      for await (const partialObject of readStreamableValue(object)) {
+        setAnalysis(() => partialObject);
+        if (partialObject?.checkboxes) {
+          // The object generation is sequential, so, if the checkboxes are
+          // present, the model has finished thinking (CoT). We can now proceed
+          // to the generation of the selection phase.
+          setStatus(() => "analysis:suggestions-generation");
+        }
       }
+      // The generation phase of the analysis is done, we can now proceed to the
+      // extra step selection phase.
+      setStatus(() => "analysis:suggestions-selection");
+    } catch (error) {
+      alert(m.app_generation_error());
+      setPicture(() => undefined);
+      setStatus(() => "idle");
     }
-    // The generation phase of the analysis is done, we can now proceed to the
-    // extra step selection phase.
-    setStatus(() => "analysis:suggestions-selection");
   }
 
   async function submitSuggestions(suggestions: string[]) {
     setStatus(() => "end");
-    const result = await streamBreakdownUI(suggestions);
-    setBreakdownUI(() => result);
+    try {
+      const result = await streamBreakdownUI(suggestions);
+      setBreakdownUI(() => result);
+    } catch (error) {
+      alert(m.app_generation_error());
+      setPicture(() => undefined);
+      setStatus(() => "idle");
+    }
   }
 
   return {

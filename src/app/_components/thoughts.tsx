@@ -42,8 +42,8 @@ export function Thoughts({
   status: "generating" | "done";
 }>) {
   const classNames = {
-    generating: "opacity-50",
-    done: "opacity-40",
+    generating: "opacity-70",
+    done: "opacity-30",
   } as const;
 
   return (

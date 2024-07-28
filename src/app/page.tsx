@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef } from "react";
-import { DialogDescription } from "@radix-ui/react-dialog";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { useWindowScroll } from "@uidotdev/usehooks";
 import { AnimatePresence, motion } from "framer-motion";
@@ -46,13 +45,13 @@ import { useStore } from "./_hooks/use-store";
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+      <Header rightContent={<SettingsButton />} />
       <MainContent />
     </div>
   );
 }
 
-function Header() {
+function Header({ rightContent }: { rightContent: React.ReactNode }) {
   const [state] = useWindowScroll();
   const scrollY = state.y ?? 0;
 
@@ -70,9 +69,7 @@ function Header() {
             {m.title()}
           </div>
         </div>
-        <div className="flex flex-1 justify-end">
-          <SettingsButton />
-        </div>
+        <div className="flex flex-1 justify-end">{rightContent}</div>
       </div>
     </header>
   );
