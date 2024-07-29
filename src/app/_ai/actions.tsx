@@ -16,16 +16,7 @@ import { z } from "zod";
 
 import { languageTag } from "~/paraglide/runtime";
 import type { PartialAnalysisSchema } from "./schemas";
-import {
-  TableBody,
-  TableCell,
-  TableFooter,
-  TableRow,
-} from "~/components/ui/table";
-import {
-  BreakdownTable,
-  BreakdownTablePlaceholderRows,
-} from "../_components/breakdown-table";
+import { BreakdownTable } from "../_components/breakdown-table";
 import * as Prompts from "./prompts";
 import { analysisSchema } from "./schemas";
 
@@ -68,7 +59,6 @@ export async function streamAnalysis(image: string) {
 
     const { partialObjectStream } = await streamObject({
       model: openai()("gpt-4o"),
-      temperature: 0.5,
       messages: history.get(),
       schema: analysisSchema,
       onFinish: ({ object }) => {
@@ -116,17 +106,12 @@ export async function streamBreakdownUI(selection: string[]) {
 
   const history = getAIState<ServerAI>();
   const stream = createStreamableUI(
-    <BreakdownTable description="...">
-      <TableBody>
-        <BreakdownTablePlaceholderRows n={4} />
-      </TableBody>
-    </BreakdownTable>,
+    <BreakdownTable description={undefined} rows={undefined} />,
   );
 
   void (async () => {
     const { partialObjectStream } = await streamObject({
       model: openai()("gpt-4o"),
-      temperature: 0.7,
       messages: [
         ...history,
         {
@@ -154,45 +139,28 @@ export async function streamBreakdownUI(selection: string[]) {
         }
 
         stream.done(
-          <BreakdownTable description={object.name}>
-            <TableBody>
-              {object.breakdown.map((item, i) => (
-                <TableRow key={i}>
-                  <TableCell>{item.ingredient}</TableCell>
-                  <TableCell>{item.portions}</TableCell>
-                  <TableCell>{item.totalCalories}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell colSpan={2}>Total</TableCell>
-                <TableCell>
-                  {object.breakdown.reduce(
-                    (acc, item) => acc + item.totalCalories,
-                    0,
-                  )}
-                </TableCell>
-              </TableRow>
-            </TableFooter>
-          </BreakdownTable>,
+          <BreakdownTable
+            description={object.name}
+            rows={object.breakdown.map((item) => ({
+              ingredients: item.ingredient,
+              portions: item.portions,
+              calories: item.totalCalories,
+            }))}
+          />,
         );
       },
     });
 
     for await (const partialObject of partialObjectStream) {
       stream.update(
-        <BreakdownTable description={partialObject.name ?? ""}>
-          <TableBody>
-            {partialObject.breakdown?.map((item, i) => (
-              <TableRow key={i}>
-                <TableCell>{item?.ingredient}</TableCell>
-                <TableCell>{item?.portions}</TableCell>
-                <TableCell>{item?.totalCalories}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </BreakdownTable>,
+        <BreakdownTable
+          description={partialObject.name ?? ""}
+          rows={partialObject.breakdown?.map((item) => ({
+            ingredients: item?.ingredient ?? "",
+            portions: item?.portions ?? "",
+            calories: item?.totalCalories ?? 0,
+          }))}
+        />,
       );
     }
   })();
