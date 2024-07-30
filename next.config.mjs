@@ -4,7 +4,7 @@ import { paraglide } from "@inlang/paraglide-next/plugin";
 const nextConfig = {
   experimental: {
     serverActions: {
-      bodySizeLimit: "30mb", // TODO: Optimize image uploading and remove this
+      bodySizeLimit: "20mb", // TODO: Optimize image uploading and remove this
     },
   },
 };

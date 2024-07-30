@@ -208,6 +208,15 @@ function MainContent() {
         <Viewfinder
           picture={state.picture}
           startCamera={() => startPictureUploadMethod("capture")}
+          status={
+            status === "idle"
+              ? "idle"
+              : status === "picture-confirmation"
+                ? "focus"
+                : status === "analysis:thoughts-generation"
+                  ? "generating"
+                  : "done"
+          }
         />
         <div className="px-10">
           <Controls
@@ -253,25 +262,66 @@ function MainContent() {
 function Viewfinder({
   picture,
   startCamera,
+  status,
 }: {
   picture: string | undefined;
   startCamera: () => void;
+  status: "idle" | "focus" | "generating" | "done";
 }) {
+  const blurVariants = {
+    idle: {
+      opacity: [0.6, 0.8],
+      scale: [1, 1.1],
+      transition: {
+        duration: 2,
+        ease: "easeInOut",
+        repeat: Infinity,
+        repeatType: "reverse" as const,
+      },
+    },
+    focus: {
+      scale: 1,
+      opacity: 1,
+      transition: {
+        ease: "easeInOut",
+      },
+    },
+    generating: {
+      opacity: [0.6, 0.8],
+      scale: [1, 1.05],
+      transition: {
+        duration: 2,
+        ease: "easeInOut",
+        repeat: Infinity,
+        repeatType: "reverse" as const,
+      },
+    },
+    done: {
+      opacity: 0.8,
+      scale: 1.1,
+      transition: {
+        ease: "easeInOut",
+      },
+    },
+  };
+
+  const blurClassNames = {
+    idle: "blur-xl opacity-60",
+    focus: "blur-md",
+    generating: "blur-md opacity-60",
+    done: "blur-xl",
+  };
+
   return (
     <div className="mx-auto sm:w-[300px]">
       <AspectRatio ratio={1}>
         <motion.div
           className={cn(
-            "absolute inset-0 -z-50 rounded-3xl bg-[hsla(0,100%,50%,1)] opacity-60 bg-blend-normal blur-xl",
-            "bg-[radial-gradient(circle_at_40%_20%,hsla(28,100%,74%,1)_0%,transparent_50%),radial-gradient(circle_at_80%_0%,hsla(189,100%,56%,1)_0%,transparent_50%),radial-gradient(circle_at_0%_50%,hsla(355,100%,93%,1)_0%,transparent_50%),radial-gradient(circle_at_80%_50%,hsla(340,100%,76%,1)_0%,transparent_50%),radial-gradient(circle_at_0%_100%,hsla(22,100%,77%,1)_0%,transparent_50%),radial-gradient(circle_at_80%_100%,hsla(242,100%,70%,1)_0%,transparent_50%),radial-gradient(circle_at_0%_0%,hsla(343,100%,76%,1)_0%,transparent_50%)]",
+            "absolute inset-0 -z-50 rounded-lg bg-ai-gradient bg-blend-normal transition-[filter]",
+            blurClassNames[status],
           )}
-          animate={{ opacity: [0.6, 0.8] }}
-          transition={{
-            duration: 2,
-            ease: "easeInOut",
-            repeat: Infinity,
-            repeatType: "reverse",
-          }}
+          variants={blurVariants}
+          animate={status}
         ></motion.div>
         <div className="absolute inset-0 overflow-hidden rounded-lg border bg-muted shadow-classic">
           <div
