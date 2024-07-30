@@ -4,6 +4,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -90,6 +91,14 @@ export function BreakdownTable({
             </TableRow>
           ))}
         </TableBody>
+        <TableFooter>
+          <TableRow>
+            <TableCell colSpan={2}>Total</TableCell>
+            <TableCell>
+              {rows?.reduce((acc, row) => acc + row.calories, 0)}
+            </TableCell>
+          </TableRow>
+        </TableFooter>
       </InfinityTable>
     </div>
   );

@@ -22,13 +22,13 @@ import { analysisSchema } from "./schemas";
 
 initializeLanguage();
 
-const openai = () => {
+function getProvider() {
   const cookieStore = cookies();
   return createOpenAI({
     apiKey: cookieStore.get("API_KEY")?.value,
     compatibility: "strict",
   });
-};
+}
 
 export async function streamAnalysis(image: string) {
   "use server";
@@ -58,7 +58,7 @@ export async function streamAnalysis(image: string) {
     ]);
 
     const { partialObjectStream } = await streamObject({
-      model: openai()("gpt-4o"),
+      model: getProvider()("gpt-4o"),
       messages: history.get(),
       schema: analysisSchema,
       onFinish: ({ object }) => {
@@ -89,6 +89,7 @@ export async function streamAnalysis(image: string) {
 
     stream.done();
   })().catch((error) => {
+    console.error(error);
     if (error instanceof Error) {
       stream.error(error.message);
     }
@@ -111,7 +112,7 @@ export async function streamBreakdownUI(selection: string[]) {
 
   void (async () => {
     const { partialObjectStream } = await streamObject({
-      model: openai()("gpt-4o"),
+      model: getProvider()("gpt-4o"),
       messages: [
         ...history,
         {
@@ -120,7 +121,7 @@ export async function streamBreakdownUI(selection: string[]) {
         },
       ],
       schema: z.object({
-        name: z.string(),
+        introduction: z.string(),
         breakdown: z.array(
           z.object({
             ingredient: z.string(),
@@ -140,7 +141,7 @@ export async function streamBreakdownUI(selection: string[]) {
 
         stream.done(
           <BreakdownTable
-            description={object.name}
+            description={object.introduction}
             rows={object.breakdown.map((item) => ({
               ingredients: item.ingredient,
               portions: item.portions,
@@ -154,7 +155,7 @@ export async function streamBreakdownUI(selection: string[]) {
     for await (const partialObject of partialObjectStream) {
       stream.update(
         <BreakdownTable
-          description={partialObject.name ?? ""}
+          description={partialObject.introduction ?? ""}
           rows={partialObject.breakdown?.map((item) => ({
             ingredients: item?.ingredient ?? "",
             portions: item?.portions ?? "",
