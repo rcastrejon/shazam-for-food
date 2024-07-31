@@ -11,6 +11,9 @@ import * as m from "~/paraglide/messages.js";
 import { availableLanguageTags } from "~/paraglide/runtime";
 import type { ThoughtsStatus } from "./_components/thoughts";
 import type { Status } from "./_hooks/use-generative-area";
+import { Fa6BrandsGithub } from "~/components/icons/Fa6BrandsGithub";
+import { Fa6BrandsLinkedin } from "~/components/icons/Fa6BrandsLinkedin";
+import { Fa6BrandsXTwitter } from "~/components/icons/Fa6BrandsXTwitter";
 import { AspectRatio } from "~/components/ui/aspect-ratio";
 import { Button } from "~/components/ui/button";
 import {
@@ -22,6 +25,14 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "~/components/ui/navigation-menu";
 import {
   Select,
   SelectContent,
@@ -67,9 +78,43 @@ function Header({ rightContent }: { rightContent: React.ReactNode }) {
       <div className="container flex h-14 max-w-screen-2xl items-center">
         <div className="flex-1 sm:hidden" />
         <div className="min-w-max">
-          <div className="text-center text-lg font-semibold tracking-tight">
-            {m.title()}
-          </div>
+          <NavigationMenu>
+            <NavigationMenuList>
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="!bg-transparent text-center text-lg font-semibold tracking-tight">
+                  {m.title()}
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <div className="grid w-max grid-cols-3 gap-4 p-6">
+                    <NavigationMenuLink
+                      href="https://github.com/rcastrejon/shazam-for-food"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Fa6BrandsGithub className="h-5 w-5 text-muted-foreground" />
+                      <VisuallyHidden.Root>GitHub</VisuallyHidden.Root>
+                    </NavigationMenuLink>
+                    <NavigationMenuLink
+                      href="https://x.com/rodrigocstc"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Fa6BrandsXTwitter className="h-5 w-5 text-muted-foreground" />
+                      <VisuallyHidden.Root>X (Twitter)</VisuallyHidden.Root>
+                    </NavigationMenuLink>
+                    <NavigationMenuLink
+                      href="https://www.linkedin.com/in/rodrigocastrejon"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Fa6BrandsLinkedin className="h-5 w-5 text-muted-foreground" />
+                      <VisuallyHidden.Root>LinkedIn</VisuallyHidden.Root>
+                    </NavigationMenuLink>
+                  </div>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
         </div>
         <div className="flex flex-1 justify-end">{rightContent}</div>
       </div>

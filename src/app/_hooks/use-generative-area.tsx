@@ -60,9 +60,9 @@ export function useGenerativeArea() {
 
   function resetState() {
     setPicture(() => undefined);
-    setStatus(() => "idle");
     setAnalysis(() => undefined);
     setBreakdownUI(() => undefined);
+    setStatus(() => "idle");
   }
 
   return {
