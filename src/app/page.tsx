@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import * as m from "~/paraglide/messages.js";
 import { availableLanguageTags } from "~/paraglide/runtime";
+import type { ThoughtsStatus } from "./_components/thoughts";
 import type { Status } from "./_hooks/use-generative-area";
 import { AspectRatio } from "~/components/ui/aspect-ratio";
 import { Button } from "~/components/ui/button";
@@ -35,6 +36,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
+import { ConditionalRender } from "~/lib/helpers";
 import { cn } from "~/lib/utils";
 import { Suggestions, SuggestionsCheckbox } from "./_components/suggestions";
 import { Thoughts, ThoughtsContent } from "./_components/thoughts";
@@ -75,6 +77,7 @@ function Header({ rightContent }: { rightContent: React.ReactNode }) {
   );
 }
 
+// Validation schema for the settings form
 const settingsFormSchema = z.object({
   apiKey: z.string().optional(),
   language: z.enum(availableLanguageTags).optional(),
@@ -155,8 +158,14 @@ function SettingsButton() {
 function MainContent() {
   const captureInputRef = useRef<HTMLInputElement>(null);
   const diskInputRef = useRef<HTMLInputElement>(null);
-
   const { status, state, actions } = useGenerativeArea();
+
+  function resetInputs() {
+    if (captureInputRef.current && diskInputRef.current) {
+      captureInputRef.current.value = "";
+      diskInputRef.current.value = "";
+    }
+  }
 
   function startPictureUploadMethod(method: "disk" | "capture") {
     if (method === "disk") {
@@ -180,10 +189,27 @@ function MainContent() {
   }
 
   function handleRetakePicture() {
-    if (captureInputRef.current && diskInputRef.current) {
-      captureInputRef.current.value = "";
-      diskInputRef.current.value = "";
-      actions.retakePicture();
+    resetInputs();
+    actions.retakePicture();
+  }
+
+  async function handleStartAnalysis() {
+    try {
+      await actions.startAnalysis();
+    } catch (error) {
+      alert(m.app_generation_error());
+      resetInputs();
+      actions.resetState();
+    }
+  }
+
+  async function handleSubmitSuggestions(suggestions: string[]) {
+    try {
+      await actions.submitSuggestions(suggestions);
+    } catch (error) {
+      alert(m.app_generation_error());
+      resetInputs();
+      actions.resetState();
     }
   }
 
@@ -205,69 +231,57 @@ function MainContent() {
           ref={diskInputRef}
           hidden
         />
-        <Viewfinder
-          picture={state.picture}
-          startCamera={() => startPictureUploadMethod("capture")}
-          status={
-            status === "idle"
-              ? "idle"
-              : status === "picture-confirmation"
-                ? "focus"
-                : status === "analysis:thoughts-generation"
-                  ? "generating"
-                  : "done"
-          }
-        />
+        <Viewfinder status={getViewfinderStatus(status)}>
+          <ViewfinderContent
+            picture={state.picture}
+            startCamera={() => startPictureUploadMethod("capture")}
+          />
+        </Viewfinder>
         <div className="px-10">
           <Controls
             status={status}
             openCameraRoll={() => startPictureUploadMethod("disk")}
-            startAnalysis={actions.startAnalysis}
+            startAnalysis={handleStartAnalysis}
             retakePicture={handleRetakePicture}
           />
         </div>
       </div>
-      <ThoughtsContainer status={status}>
+      <ConditionalRender condition={shouldRenderThoughts(status)}>
         <div className="container mt-8">
-          <Thoughts
-            status={
-              status === "analysis:thoughts-generation" ? "generating" : "done"
-            }
-          >
+          <Thoughts status={getThoughtsStatus(status)}>
             {state.analysis?.thinking && (
               <ThoughtsContent>{state.analysis.thinking}</ThoughtsContent>
             )}
           </Thoughts>
         </div>
-      </ThoughtsContainer>
-      <SuggestionsContainer status={status}>
+      </ConditionalRender>
+      <ConditionalRender condition={shouldRenderSuggestions(status)}>
         <div className="container mt-8">
           <Suggestions
             isGenerating={status === "analysis:suggestions-generation"}
-            submitSuggestions={actions.submitSuggestions}
+            submitSuggestions={handleSubmitSuggestions}
           >
             {state.analysis?.checkboxes?.map((checkbox, index) => (
               <SuggestionsCheckbox key={index} label={checkbox?.label ?? ""} />
             ))}
           </Suggestions>
         </div>
-      </SuggestionsContainer>
-      {state.breakdownUI && (
+      </ConditionalRender>
+      <ConditionalRender condition={state.breakdownUI !== undefined}>
         <div className="container mt-8">{state.breakdownUI}</div>
-      )}
+      </ConditionalRender>
     </main>
   );
 }
 
+type ViewfinderStatus = "idle" | "focus" | "generating" | "done";
+
 function Viewfinder({
-  picture,
-  startCamera,
   status,
-}: {
-  picture: string | undefined;
-  startCamera: () => void;
-  status: "idle" | "focus" | "generating" | "done";
-}) {
+  children,
+}: React.PropsWithChildren<{
+  status: ViewfinderStatus;
+}>) {
   const blurVariants = {
     idle: {
       opacity: [0.6, 0.8],
@@ -323,61 +337,73 @@ function Viewfinder({
           variants={blurVariants}
           animate={status}
         ></motion.div>
-        <div className="absolute inset-0 overflow-hidden rounded-lg border bg-muted shadow-classic">
-          <div
-            className={cn(
-              "absolute inset-0 z-0 grid min-w-max place-content-center gap-2",
-              picture && "hidden",
-            )}
-          >
-            <div className="h-[1rem]" />
-            <TooltipProvider delayDuration={250}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button onClick={startCamera}>
-                    <Camera className="mr-2 h-4 w-4" /> {m.app_startCamera()}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-xs">{m.app_cameraWarning()}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <p className="text-center text-xs text-muted-foreground">
-              {m.app_imageLimit()}
-            </p>
-          </div>
-
-          <AnimatePresence>
-            {picture && (
-              <motion.img
-                key="picture"
-                className="pointer-events-none absolute z-10 h-full w-full touch-none object-cover"
-                initial={{
-                  filter: "blur(20px)",
-                  scale: 1.5,
-                }}
-                animate={{
-                  filter: "blur(0px)",
-                  scale: 1,
-                }}
-                exit={{
-                  filter: "blur(20px)",
-                  scale: 1.5,
-                  opacity: 0,
-                }}
-                transition={{
-                  duration: 0.3,
-                  ease: "easeOut",
-                }}
-                src={picture}
-                alt={m.app_pictureAlt()}
-                draggable={false}
-              />
-            )}
-          </AnimatePresence>
-        </div>
+        {children}
       </AspectRatio>
+    </div>
+  );
+}
+
+function ViewfinderContent({
+  picture,
+  startCamera,
+}: {
+  picture: string | undefined;
+  startCamera: () => void;
+}) {
+  return (
+    <div className="relative h-full w-full overflow-hidden rounded-lg border bg-muted shadow-classic">
+      <div
+        className={cn(
+          "absolute inset-0 z-0 grid place-content-center gap-2",
+          picture && "hidden",
+        )}
+      >
+        <div className="h-4" />
+        <TooltipProvider delayDuration={250}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={startCamera}>
+                <Camera className="mr-2 h-4 w-4"></Camera> {m.app_startCamera()}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-sm">{m.app_cameraWarning()}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <p className="text-center text-xs text-muted-foreground">
+          {m.app_imageLimit()}
+        </p>
+      </div>
+
+      <AnimatePresence>
+        {picture && (
+          <motion.img
+            key="picture"
+            className="pointer-events-none absolute z-10 h-full w-full touch-none object-cover"
+            initial={{
+              filter: "blur(20px)",
+              scale: 1.5,
+            }}
+            animate={{
+              filter: "blur(0px)",
+              scale: 1,
+            }}
+            exit={{
+              filter: "blur(20px)",
+              scale: 1.5,
+              opacity: 0,
+            }}
+            transition={{
+              duration: 0.3,
+              ease: "easeOut",
+            }}
+            src={picture}
+            alt={m.app_pictureAlt()}
+            draggable={false}
+          ></motion.img>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -420,10 +446,23 @@ function Controls({
   return null;
 }
 
-function ThoughtsContainer({
-  status,
-  children,
-}: React.PropsWithChildren<{ status: Status }>) {
+/*
+ * Helper functions
+ */
+
+function getViewfinderStatus(status: Status): ViewfinderStatus {
+  if (status === "idle") return "idle";
+  if (status === "picture-confirmation") return "focus";
+  if (status === "analysis:thoughts-generation") return "generating";
+  return "done";
+}
+
+function getThoughtsStatus(status: Partial<Status>): ThoughtsStatus {
+  if (status === "analysis:thoughts-generation") return "generating";
+  return "done";
+}
+
+function shouldRenderThoughts(status: Status) {
   const guard: Status[] = [
     "analysis:thoughts-generation",
     "analysis:suggestions-generation",
@@ -431,22 +470,13 @@ function ThoughtsContainer({
     "analysis:suggestions-generation",
     "end",
   ];
-  if (guard.includes(status)) {
-    return <>{children}</>;
-  }
-  return null;
+  return guard.includes(status);
 }
 
-function SuggestionsContainer({
-  status,
-  children,
-}: React.PropsWithChildren<{ status: Status }>) {
+function shouldRenderSuggestions(status: Status) {
   const guard: Status[] = [
     "analysis:suggestions-generation",
     "analysis:suggestions-selection",
   ];
-  if (guard.includes(status)) {
-    return <>{children}</>;
-  }
-  return null;
+  return guard.includes(status);
 }

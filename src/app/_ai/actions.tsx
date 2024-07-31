@@ -164,7 +164,12 @@ export async function streamBreakdownUI(selection: string[]) {
         />,
       );
     }
-  })();
+  })().catch((error) => {
+    console.error(error);
+    if (error instanceof Error) {
+      stream.error(error.message);
+    }
+  });
 
   return stream.value;
 }

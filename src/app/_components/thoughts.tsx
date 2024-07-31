@@ -35,11 +35,13 @@ function ThoughtsHeader() {
   );
 }
 
+export type ThoughtsStatus = "generating" | "done";
+
 export function Thoughts({
   status,
   children,
 }: React.PropsWithChildren<{
-  status: "generating" | "done";
+  status: ThoughtsStatus;
 }>) {
   const classNames = {
     generating: "opacity-70",
