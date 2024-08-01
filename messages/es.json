@@ -13,7 +13,7 @@
   "app_settings_language_button": "Guardar",
   "app_startCamera": "Iniciar cámara",
   "app_cameraWarning": "La cámara solo está disponible en dispositivos móviles.",
-  "app_imageLimit": "Imagen de hasta 20MB",
+  "app_imageLimit": "Imagen de hasta 10MB",
   "app_uploadPicture": "Subir desde el dispositivo",
   "app_pictureAlt": "Una imagen subida por un usuario.",
   "app_confirm": "Confirmar",

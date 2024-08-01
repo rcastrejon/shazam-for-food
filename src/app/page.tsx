@@ -229,13 +229,14 @@ function MainContent() {
     const reader = new FileReader();
     reader.onload = () => {
       actions.loadPicture(reader.result as string);
+      resetInputs();
     };
     reader.readAsDataURL(file);
   }
 
   function handleRetakePicture() {
-    resetInputs();
     actions.retakePicture();
+    resetInputs();
   }
 
   async function handleStartAnalysis() {
@@ -243,7 +244,6 @@ function MainContent() {
       await actions.startAnalysis();
     } catch (error) {
       alert(m.app_generation_error());
-      resetInputs();
       actions.resetState();
     }
   }
@@ -253,7 +253,6 @@ function MainContent() {
       await actions.submitSuggestions(suggestions);
     } catch (error) {
       alert(m.app_generation_error());
-      resetInputs();
       actions.resetState();
     }
   }
@@ -265,14 +264,14 @@ function MainContent() {
           onChange={handleInputChange}
           type="file"
           capture="environment"
-          accept="image/png, image/jpeg"
+          accept="image/jpeg"
           ref={captureInputRef}
           hidden
         />
         <input
           onChange={handleInputChange}
           type="file"
-          accept="image/png, image/jpeg"
+          accept="image/jpeg"
           ref={diskInputRef}
           hidden
         />
