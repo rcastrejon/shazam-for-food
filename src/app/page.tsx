@@ -55,6 +55,8 @@ import { useGenerativeArea } from "./_hooks/use-generative-area";
 import { setSettings, useSettingsStore } from "./_hooks/use-settings-store";
 import { useStore } from "./_hooks/use-store";
 
+export const maxDuration = 60;
+
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
