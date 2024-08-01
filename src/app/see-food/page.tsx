@@ -9,6 +9,8 @@ import { getIsHotdog } from "./_ai/actions";
 import { Screens, ScreensContent } from "./_components/screens";
 import backgroundImg from "./background.webp";
 
+export const maxDuration = 60;
+
 export default function Page() {
   const [currentScreen, setCurrentScreen] = useState<string>("start");
   const [imageDataURL, setImageDataURL] = useState<string>("");
