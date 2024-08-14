@@ -58,7 +58,7 @@ export async function streamAnalysis(image: string) {
     ]);
 
     const { partialObjectStream } = await streamObject({
-      model: getProvider()("gpt-4o"),
+      model: getProvider()("gpt-4o-2024-08-06"),
       messages: history.get(),
       schema: analysisSchema,
       onFinish: ({ object }) => {
@@ -112,7 +112,7 @@ export async function streamBreakdownUI(selection: string[]) {
 
   void (async () => {
     const { partialObjectStream } = await streamObject({
-      model: getProvider()("gpt-4o"),
+      model: getProvider()("gpt-4o-2024-08-06"),
       messages: [
         ...history,
         {
